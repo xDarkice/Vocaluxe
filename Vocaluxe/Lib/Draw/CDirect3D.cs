@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System.Drawing.Drawing2D;
@@ -66,6 +64,11 @@ namespace Vocaluxe.Lib.Draw
         private int _W = 1;
         private int _Y;
         private int _X;
+
+        private int _BorderLeft = 0;
+        private int _BorderRight = 0;
+        private int _BorderTop = 0;
+        private int _BorderBottom = 0;
 
         private CTexture _BlankTexture;
 
@@ -402,20 +405,15 @@ namespace Vocaluxe.Lib.Draw
             if (_Device.Disposed)
                 return false;
             Text = CSettings.GetFullVersionText();
-            SlimDX.Matrix translate = SlimDX.Matrix.Translation(new Vector3(-(float)CSettings.RenderW / 2, (float)CSettings.RenderH / 2, 0));
-            SlimDX.Matrix projection = SlimDX.Matrix.OrthoOffCenterLH(-(float)CSettings.RenderW / 2, (float)CSettings.RenderW / 2, -(float)CSettings.RenderH / 2,
-                                                                      (float)CSettings.RenderH / 2,
-                                                                      CSettings.ZNear, CSettings.ZFar);
+            _AdjustNewBorders();
+
             _VertexBuffer = new VertexBuffer(_Device, CSettings.VertexBufferElements * (4 * Marshal.SizeOf(typeof(STexturedColoredVertex))), Usage.WriteOnly | Usage.Dynamic,
                                              VertexFormat.Position | VertexFormat.Texture1 | VertexFormat.Diffuse, Pool.Default);
 
             if (_Device.SetStreamSource(0, _VertexBuffer, 0, Marshal.SizeOf(typeof(STexturedColoredVertex))).IsFailure)
                 CLog.LogError("Failed to set stream source");
             _Device.VertexDeclaration = STexturedColoredVertex.GetDeclaration(_Device);
-            if (_Device.SetTransform(TransformState.Projection, projection).IsFailure)
-                CLog.LogError("Failed to set orthogonal matrix");
-            if (_Device.SetTransform(TransformState.World, translate).IsFailure)
-                CLog.LogError("Failed to set translation matrix");
+            
             if (_Device.SetRenderState(RenderState.CullMode, Cull.None).IsFailure)
                 CLog.LogError("Failed to set cull mode");
             if (_Device.SetRenderState(RenderState.AlphaBlendEnable, true).IsFailure)
@@ -448,7 +446,7 @@ namespace Vocaluxe.Lib.Draw
             if (_Device.SetTextureStageState(0, TextureStage.AlphaOperation, TextureOperation.Modulate).IsFailure)
                 CLog.LogError("Failed to set alpha operation");
 
-            Int16[] indices = new Int16[6];
+            var indices = new Int16[6];
             indices[0] = 0;
             indices[1] = 1;
             indices[2] = 2;
@@ -465,7 +463,7 @@ namespace Vocaluxe.Lib.Draw
 
             //This creates a new white texture and adds it to the texture pool
             //This texture is used for the DrawRect method
-            using (Bitmap blankMap = new Bitmap(1, 1))
+            using (var blankMap = new Bitmap(1, 1))
             {
                 Graphics g = Graphics.FromImage(blankMap);
                 g.Clear(Color.White);
@@ -536,6 +534,18 @@ namespace Vocaluxe.Lib.Draw
                     else
                         _LeaveFullScreen();
                 }
+
+                //Apply border changes
+                if (_BorderLeft != CConfig.BorderLeft || _BorderRight != CConfig.BorderRight || _BorderTop != CConfig.BorderTop || _BorderBottom != CConfig.BorderBottom)
+                {
+                    _BorderLeft = CConfig.BorderLeft;
+                    _BorderRight = CConfig.BorderRight;
+                    _BorderTop = CConfig.BorderTop;
+                    _BorderBottom = CConfig.BorderBottom;
+
+                    _AdjustNewBorders();
+                }
+
                 if (CTime.IsRunning())
                     delay = (int)Math.Floor(CConfig.CalcCycleTime() - CTime.GetMilliseconds());
 
@@ -559,6 +569,20 @@ namespace Vocaluxe.Lib.Draw
             _IndexBuffer.Dispose();
             if (_Device.Reset(_PresentParameters).IsFailure)
                 CLog.LogError("Failed to reset the device");
+        }
+
+        private void _AdjustNewBorders()
+        {
+            SlimDX.Matrix translate = SlimDX.Matrix.Translation(new Vector3(-(float)CSettings.RenderW / 2, (float)CSettings.RenderH / 2, 0));
+            SlimDX.Matrix projection = SlimDX.Matrix.OrthoOffCenterLH(
+                -(float)CSettings.RenderW / 2 - _BorderLeft, (float)CSettings.RenderW / 2 + _BorderRight,
+                -(float)CSettings.RenderH / 2 - _BorderBottom, (float)CSettings.RenderH / 2 + _BorderTop,
+                CSettings.ZNear, CSettings.ZFar);
+
+            if (_Device.SetTransform(TransformState.Projection, projection).IsFailure)
+                CLog.LogError("Failed to set orthogonal matrix");
+            if (_Device.SetTransform(TransformState.World, translate).IsFailure)
+                CLog.LogError("Failed to set translation matrix");
         }
 
         /// <summary>
@@ -674,7 +698,7 @@ namespace Vocaluxe.Lib.Draw
             CTexture texture = _GetNewTexture(_W, _H);
 
             Surface backbufferSurface = _Device.GetBackBuffer(0, 0);
-            Texture tex = new Texture(_Device, texture.W2, texture.H2, 0, Usage.AutoGenerateMipMap, Format.A8R8G8B8, Pool.Managed);
+            var tex = new Texture(_Device, texture.W2, texture.H2, 0, Usage.AutoGenerateMipMap, Format.A8R8G8B8, Pool.Managed);
             Surface textureSurface = tex.GetSurfaceLevel(0);
             Surface.FromSurface(textureSurface, backbufferSurface, Filter.Default, 0, new Rectangle(0, 0, _W, _H), new Rectangle(0, 0, _W, _H));
             backbufferSurface.Dispose();
@@ -713,7 +737,7 @@ namespace Vocaluxe.Lib.Draw
         public void MakeScreenShot()
         {
             const string file = "Screenshot_";
-            string path = Path.Combine(Environment.CurrentDirectory, CSettings.FolderScreenshots);
+            string path = Path.Combine(CSettings.DataPath, CSettings.FolderScreenshots);
 
             int i = 0;
             while (File.Exists(Path.Combine(path, file + i.ToString("00000") + ".bmp")))
@@ -722,7 +746,7 @@ namespace Vocaluxe.Lib.Draw
             //create a surface of the frame
             using (Surface surface = _Device.GetBackBuffer(0, 0))
             {
-                Bitmap screen = new Bitmap(Surface.ToStream(surface, ImageFileFormat.Bmp));
+                var screen = new Bitmap(Surface.ToStream(surface, ImageFileFormat.Bmp));
                 screen.Save(Path.Combine(path, file + i.ToString("00000") + ".bmp"), ImageFormat.Bmp);
                 screen.Dispose();
             }
@@ -742,8 +766,8 @@ namespace Vocaluxe.Lib.Draw
         /// <param name="y2">The end y-value</param>
         public void DrawLine(int a, int r, int g, int b, int w, int x1, int y1, int x2, int y2)
         {
-            Vector2[] lineVector = new Vector2[] {new Vector2(x1, y1), new Vector2(x2, y2)};
-            using (Line line = new Line(_Device))
+            var lineVector = new Vector2[] {new Vector2(x1, y1), new Vector2(x2, y2)};
+            using (var line = new Line(_Device))
             {
                 line.Antialias = true;
                 line.Begin();
@@ -850,7 +874,7 @@ namespace Vocaluxe.Lib.Draw
             w = _CheckForNextPowerOf2(w);
             h = _CheckForNextPowerOf2(h);
 
-            CTexture texture = new CTexture(bmp.Width, bmp.Height, w, h, true);
+            var texture = new CTexture(bmp.Width, bmp.Height, w, h, true);
 
             Bitmap bmp2 = null;
             byte[] data;
@@ -907,7 +931,7 @@ namespace Vocaluxe.Lib.Draw
         {
             //Create a new texture in the managed pool, which does not need to be recreated on a lost device
             //because a copy of the texture is hold in the Ram
-            Texture t = new Texture(_Device, textureW, textureH, 0, Usage.AutoGenerateMipMap, Format.A8R8G8B8, Pool.Managed);
+            var t = new Texture(_Device, textureW, textureH, 0, Usage.AutoGenerateMipMap, Format.A8R8G8B8, Pool.Managed);
             _WriteDataToTexture(t, w, data);
             return t;
         }
@@ -939,7 +963,7 @@ namespace Vocaluxe.Lib.Draw
             {
                 texture.ID = _IDs.Dequeue();
                 _D3DTextures.Add(texture.ID, null);
-                STextureQueue queue = new STextureQueue(texture.ID, texture.W2, texture.H2, w, h, data);
+                var queue = new STextureQueue(texture.ID, texture.W2, texture.H2, w, h, data);
                 _TexturesToLoad.Enqueue(queue);
             }
             return texture;
@@ -1122,7 +1146,7 @@ namespace Vocaluxe.Lib.Draw
 
             if (!mirrored)
             {
-                STexturedColoredVertex[] vert = new STexturedColoredVertex[4];
+                var vert = new STexturedColoredVertex[4];
                 vert[0] = new STexturedColoredVertex(new Vector3(rx1, -ry1, rect.Z + CGraphics.ZOffset), new Vector2(x1, y1), c.ToArgb());
                 vert[1] = new STexturedColoredVertex(new Vector3(rx1, -ry2, rect.Z + CGraphics.ZOffset), new Vector2(x1, y2), c.ToArgb());
                 vert[2] = new STexturedColoredVertex(new Vector3(rx2, -ry2, rect.Z + CGraphics.ZOffset), new Vector2(x2, y2), c.ToArgb());
@@ -1131,7 +1155,7 @@ namespace Vocaluxe.Lib.Draw
             }
             else
             {
-                STexturedColoredVertex[] vert = new STexturedColoredVertex[4];
+                var vert = new STexturedColoredVertex[4];
                 vert[0] = new STexturedColoredVertex(new Vector3(rx1, -ry1, rect.Z + CGraphics.ZOffset), new Vector2(x1, -y1), c.ToArgb());
                 vert[1] = new STexturedColoredVertex(new Vector3(rx1, -ry2, rect.Z + CGraphics.ZOffset), new Vector2(x1, -y2), c.ToArgb());
                 vert[2] = new STexturedColoredVertex(new Vector3(rx2, -ry2, rect.Z + CGraphics.ZOffset), new Vector2(x2, -y2), c.ToArgb());
@@ -1175,7 +1199,7 @@ namespace Vocaluxe.Lib.Draw
 
             Color c = color.AsColor();
 
-            STexturedColoredVertex[] vert = new STexturedColoredVertex[4];
+            var vert = new STexturedColoredVertex[4];
             vert[0] = new STexturedColoredVertex(new Vector3(rx1, -ry1, rect.Z + CGraphics.ZOffset), new Vector2(x1, y1), c.ToArgb());
             vert[1] = new STexturedColoredVertex(new Vector3(rx1, -ry2, rect.Z + CGraphics.ZOffset), new Vector2(x1, y2), c.ToArgb());
             vert[2] = new STexturedColoredVertex(new Vector3(rx2, -ry2, rect.Z + CGraphics.ZOffset), new Vector2(x2, y2), c.ToArgb());
@@ -1258,7 +1282,7 @@ namespace Vocaluxe.Lib.Draw
             color.A = 0;
             Color transparent = color.AsColor();
 
-            STexturedColoredVertex[] vert = new STexturedColoredVertex[4];
+            var vert = new STexturedColoredVertex[4];
             vert[0] = new STexturedColoredVertex(new Vector3(rx1, -ry1, rect.Z + CGraphics.ZOffset), new Vector2(x1, y2), c.ToArgb());
             vert[1] = new STexturedColoredVertex(new Vector3(rx1, -ry2, rect.Z + CGraphics.ZOffset), new Vector2(x1, y1), transparent.ToArgb());
             vert[2] = new STexturedColoredVertex(new Vector3(rx2, -ry2, rect.Z + CGraphics.ZOffset), new Vector2(x2, y1), transparent.ToArgb());

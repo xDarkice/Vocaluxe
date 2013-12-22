@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -42,13 +40,13 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 2; }
+            get { return 3; }
         }
 
         private const string _SelectSlideProfiles = "SelectSlideProfiles";
         private const string _SelectSlideDifficulty = "SelectSlideDifficulty";
         private const string _SelectSlideAvatars = "SelectSlideAvatars";
-        private const string _SelectSlideGuestProfile = "SelectSlideGuestProfile";
+        private const string _SelectSlideUserRole = "SelectSlideUserRole";
         private const string _SelectSlideActive = "SelectSlideActive";
         private const string _ButtonPlayerName = "ButtonPlayerName";
         private const string _ButtonExit = "ButtonExit";
@@ -75,7 +73,7 @@ namespace Vocaluxe.Screens
 
             _ThemeButtons = new string[]
                 {_ButtonPlayerName, _ButtonExit, _ButtonSave, _ButtonNew, _ButtonDelete, _ButtonWebcam, _ButtonSaveSnapshot, _ButtonDiscardSnapshot, _ButtonTakeSnapshot};
-            _ThemeSelectSlides = new string[] {_SelectSlideProfiles, _SelectSlideDifficulty, _SelectSlideAvatars, _SelectSlideGuestProfile, _SelectSlideActive};
+            _ThemeSelectSlides = new string[] {_SelectSlideProfiles, _SelectSlideDifficulty, _SelectSlideAvatars, _SelectSlideUserRole, _SelectSlideActive};
             _ThemeStatics = new string[] {_StaticAvatar};
 
             _EditMode = EEditMode.None;
@@ -93,7 +91,7 @@ namespace Vocaluxe.Screens
             _Buttons[_ButtonTakeSnapshot].Visible = false;
             _Buttons[_ButtonWebcam].Visible = CWebcam.IsDeviceAvailable();
             _SelectSlides[_SelectSlideDifficulty].SetValues<EGameDifficulty>(0);
-            _SelectSlides[_SelectSlideGuestProfile].SetValues<EOffOn>(0);
+            _SelectSlides[_SelectSlideUserRole].SetValues<EUserRole>(0);
             _SelectSlides[_SelectSlideActive].SetValues<EOffOn>(0);
             _Statics[_StaticAvatar].Aspect = EAspect.Crop;
         }
@@ -178,10 +176,10 @@ namespace Vocaluxe.Screens
                     CProfiles.SetAvatar(_SelectSlides[_SelectSlideProfiles].ValueIndex,
                                         _SelectSlides[_SelectSlideAvatars].ValueIndex);
                 }
-                else if (_SelectSlides[_SelectSlideGuestProfile].Selected)
+                else if (_SelectSlides[_SelectSlideUserRole].Selected)
                 {
-                    CProfiles.SetGuestProfile(_SelectSlides[_SelectSlideProfiles].ValueIndex,
-                                              (EOffOn)_SelectSlides[_SelectSlideGuestProfile].Selection);
+                    CProfiles.SetUserRoleProfile(_SelectSlides[_SelectSlideProfiles].ValueIndex,
+                                              (EUserRole)_SelectSlides[_SelectSlideUserRole].Selection);
                 }
                 else if (_SelectSlides[_SelectSlideActive].Selected)
                 {
@@ -227,10 +225,10 @@ namespace Vocaluxe.Screens
                     if (CWebcam.IsDeviceAvailable() && _WebcamTexture != null)
                         _OnDiscardSnapshot();
                 }
-                else if (_SelectSlides[_SelectSlideGuestProfile].Selected)
+                else if (_SelectSlides[_SelectSlideUserRole].Selected)
                 {
-                    CProfiles.SetGuestProfile(_SelectSlides[_SelectSlideProfiles].ValueIndex,
-                                              (EOffOn)_SelectSlides[_SelectSlideGuestProfile].Selection);
+                    CProfiles.SetUserRoleProfile(_SelectSlides[_SelectSlideProfiles].ValueIndex,
+                                              (EUserRole)_SelectSlides[_SelectSlideUserRole].Selection);
                 }
                 else if (_SelectSlides[_SelectSlideActive].Selected)
                 {
@@ -267,7 +265,7 @@ namespace Vocaluxe.Screens
                     _Buttons[_ButtonPlayerName].Text.Text += "|";
 
                 _SelectSlides[_SelectSlideDifficulty].Selection = (int)CProfiles.GetDifficulty(_SelectSlides[_SelectSlideProfiles].ValueIndex);
-                _SelectSlides[_SelectSlideGuestProfile].Selection = (int)CProfiles.GetGuestProfile(_SelectSlides[_SelectSlideProfiles].ValueIndex);
+                _SelectSlides[_SelectSlideUserRole].Selection = (int)CProfiles.GetUserRoleProfile(_SelectSlides[_SelectSlideProfiles].ValueIndex);
                 _SelectSlides[_SelectSlideActive].Selection = (int)CProfiles.GetActive(_SelectSlides[_SelectSlideProfiles].ValueIndex);
 
                 int avatarID = CProfiles.GetAvatarID(_SelectSlides[_SelectSlideProfiles].ValueIndex);
@@ -332,7 +330,7 @@ namespace Vocaluxe.Screens
 
         private void _OnSaveSnapshot()
         {
-            string filename = Path.Combine(CSettings.FolderProfiles, "snapshot");
+            string filename = Path.Combine(CSettings.DataPath, CSettings.FolderProfiles, "snapshot");
             int i = 0;
             while (File.Exists(filename + i + ".png"))
                 i++;
@@ -430,7 +428,7 @@ namespace Vocaluxe.Screens
                 if (!keep)
                 {
                     _SelectSlides[_SelectSlideDifficulty].Selection = (int)CProfiles.GetDifficulty(selectedProfileID);
-                    _SelectSlides[_SelectSlideGuestProfile].Selection = (int)CProfiles.GetGuestProfile(selectedProfileID);
+                    _SelectSlides[_SelectSlideUserRole].Selection = (int)CProfiles.GetUserRoleProfile(selectedProfileID);
                     _SelectSlides[_SelectSlideActive].Selection = (int)CProfiles.GetActive(selectedProfileID);
                     _SelectSlides[_SelectSlideAvatars].SetSelectionByValueIndex(CProfiles.GetAvatarID(selectedProfileID));
                 }
@@ -446,13 +444,16 @@ namespace Vocaluxe.Screens
             int selectedAvatarID = _SelectSlides[_SelectSlideAvatars].ValueIndex;
             _SelectSlides[_SelectSlideAvatars].Clear();
             IEnumerable<CAvatar> avatars = CProfiles.GetAvatars();
-            foreach (CAvatar avatar in avatars)
+            if (avatars != null)
             {
-                _SelectSlides[_SelectSlideAvatars].AddValue(
-                    Path.GetFileName(avatar.FileName),
-                    null,
-                    avatar.ID,
-                    -1);
+                foreach (CAvatar avatar in avatars)
+                {
+                    _SelectSlides[_SelectSlideAvatars].AddValue(
+                        Path.GetFileName(avatar.FileName),
+                        null,
+                        avatar.ID,
+                        -1);
+                }
             }
 
             if (keep)

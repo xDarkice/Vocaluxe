@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -50,6 +48,10 @@ namespace Vocaluxe.Base
 
                 case EPlaybackLib.Gstreamer:
                     _Playback = new CGstreamerAudio();
+                    break;
+
+                case EPlaybackLib.GstreamerSharp:
+                    _Playback = new CGstreamerSharpAudio();
                     break;
 
                 default:
@@ -118,6 +120,11 @@ namespace Vocaluxe.Base
         public static void FadeAndPause(int stream, float targetVolume, float seconds)
         {
             _Playback.FadeAndPause(stream, targetVolume, seconds);
+        }
+
+        public static void FadeAndClose(int stream, float targetVolume, float seconds)
+        {
+            _Playback.FadeAndClose(stream, targetVolume, seconds);
         }
 
         public static void FadeAndStop(int stream, float targetVolume, float seconds)
@@ -190,7 +197,7 @@ namespace Vocaluxe.Base
             int stream = Load(file);
             float length = GetLength(stream);
             Play(stream);
-            FadeAndStop(stream, 100f, length);
+            FadeAndClose(stream, 100f, length);
             return stream;
         }
         #endregion Sounds
@@ -450,11 +457,11 @@ namespace Vocaluxe.Base
                 int len = _AnalysisBuffer.Length * 2;
                 if (_Stream.Length >= len)
                 {
-                    byte[] buf = new byte[len];
+                    var buf = new byte[len];
                     _Stream.Position -= len;
                     _Stream.Read(buf, 0, len);
 
-                    byte[] b = new byte[2];
+                    var b = new byte[2];
                     for (int i = 0; i < _AnalysisBuffer.Length; i++)
                     {
                         b[0] = buf[i * 2];
@@ -496,7 +503,7 @@ namespace Vocaluxe.Base
             double maxWeight = -1.0;
             double minWeight = 1.0;
             int maxTone = -1;
-            float[] weigth = new float[_NumHalfTones];
+            var weigth = new float[_NumHalfTones];
 
             // analyze halftones
             // Note: at the lowest tone (~65Hz) and a buffer-size of 4096
@@ -535,7 +542,7 @@ namespace Vocaluxe.Base
         private double _AnalyzeAutocorrelationFreq(double freq)
         {
             int sampleIndex = 0; // index of sample to analyze
-            int samplesPerPeriod = (int)Math.Round(44100.0 / freq); // samples in one period
+            var samplesPerPeriod = (int)Math.Round(44100.0 / freq); // samples in one period
             int correlatingSampleIndex = sampleIndex + samplesPerPeriod; // index of sample one period ahead
 
             double accumDist = 0.0; // accumulated distances

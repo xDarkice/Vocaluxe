@@ -1,5 +1,4 @@
-﻿#region license
-// /*
+#region license
 //     This file is part of Vocaluxe.
 // 
 //     Vocaluxe is free software: you can redistribute it and/or modify
@@ -14,7 +13,6 @@
 // 
 //     You should have received a copy of the GNU General Public License
 //     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
 #endregion
 
 using System;
@@ -53,9 +51,9 @@ namespace Vocaluxe.Base
         //TODO: Remove this when this is decided
         private const string _ProgramCodeName = "Shining Heaven";
 
-        public const ERevision VersionRevision = ERevision.Alpha;
+        public const ERevision VersionRevision = ERevision.Beta;
 
-        public const int DatabaseHighscoreVersion = 2;
+        public const int DatabaseHighscoreVersion = 3;
         public const int DatabaseCoverVersion = 1;
         public const int DatabaseCreditsRessourcesVersion = 1;
 
@@ -67,6 +65,12 @@ namespace Vocaluxe.Base
 
         public static bool IsFullScreen;
         public const int VertexBufferElements = 10000;
+
+#if INSTALLER
+        public static string DataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Vocaluxe");
+#else
+        public static string DataPath = Environment.CurrentDirectory;
+#endif
 
         public const string Icon = "Vocaluxe.ico";
         public const string Logo = "Logo.png";
@@ -90,7 +94,15 @@ namespace Vocaluxe.Base
         public const string FolderThemes = "Themes";
         public const string FolderThemeFonts = "Fonts";
         public const string FolderScreens = "Screens";
-        public static string FolderProfiles = "Profiles";
+        public const string FolderProfiles = "Profiles";
+        public static List<string> FoldersProfiles = new List<string>
+            {
+#if INSTALLER
+                Path.Combine(Environment.CurrentDirectory, FolderProfiles),
+#endif
+                Path.Combine(DataPath, FolderProfiles)
+            };
+        public static string FolderPhotos = "Photos";
         public const string FolderSongs = "Songs";
         public const string FolderSounds = "Sounds";
         public const string FolderLanguages = "Languages";
@@ -103,6 +115,11 @@ namespace Vocaluxe.Base
         public const string FolderPartyModeScreens = "Screens";
         public const string FolderPartyModeLanguages = "Languages";
         public const string FolderPartyModeFonts = "Fonts";
+
+        public const string LinkAndroidApp = "https://build.phonegap.com/apps/639714/download/android/?qr_key=uY98ymvTr6K144RyTdhs";
+        public const string LinkSymbianApp = "https://build.phonegap.com/apps/639714/download/symbian/?qr_key=uY98ymvTr6K144RyTdhs";
+        public const string LinkWebOSApp = "https://build.phonegap.com/apps/639714/download/webos/?qr_key=uY98ymvTr6K144RyTdhs";
+        public const string LinkWindowsPhoneApp = "https://build.phonegap.com/apps/639714/download/winphone/?qr_key=uY98ymvTr6K144RyTdhs";
 
         //public const String[] ToneStrings = new String[]{ "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
         public const int ToneMin = -36;
@@ -129,6 +146,10 @@ namespace Vocaluxe.Base
         public const bool TabNavigation = false;
 
         public const float BackgroundMusicFadeTime = 0.5f;
+        public const float PauseResetTime = 1f;
+
+        public const float SlideShowImageTime = 3500f;
+        public const float SlideShowFadeTime = 500f;
 
         public static readonly List<string> MusicFileTypes = new List<string>
             {
@@ -209,7 +230,16 @@ namespace Vocaluxe.Base
 
         public static void CreateFolders()
         {
-            List<string> folders = new List<string> {FolderCover, FolderFonts, FolderProfiles, FolderSongs, FolderScreenshots, FolderBackgroundMusic, FolderSounds, FolderPlaylists};
+            var folders = new List<string>
+                {
+                    FolderCover,
+                    FolderFonts,
+                    Path.Combine(DataPath, FolderScreenshots),
+                    FolderBackgroundMusic,
+                    FolderSounds,
+                    Path.Combine(DataPath, FolderPlaylists)
+                };
+            folders.AddRange(FoldersProfiles);
 
             foreach (string folder in folders)
             {

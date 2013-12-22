@@ -1,20 +1,18 @@
 #region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -22,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using VocaluxeLib.Menu;
+using VocaluxeLib.Songs;
 
 namespace VocaluxeLib.PartyModes.TicTacToe
 {
@@ -61,7 +60,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
             _ThemeButtons = new string[] {_ButtonNext, _ButtonBack};
 
             _Data = new SDataFromScreen();
-            SFromScreenConfig config = new SFromScreenConfig
+            var config = new SFromScreenConfig
                 {
                     PlaylistID = 0,
                     NumFields = 9,
@@ -78,7 +77,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
         {
             try
             {
-                SDataToScreenConfig config = (SDataToScreenConfig)receivedData;
+                var config = (SDataToScreenConfig)receivedData;
                 _Data.ScreenConfig.NumFields = config.NumFields;
                 _Data.ScreenConfig.NumPlayerTeam1 = config.NumPlayerTeam1;
                 _Data.ScreenConfig.NumPlayerTeam2 = config.NumPlayerTeam2;
@@ -209,13 +208,13 @@ namespace VocaluxeLib.PartyModes.TicTacToe
             _SelectSlides[_SelectSlidePlaylist].Selection = _Data.ScreenConfig.PlaylistID;
             _SelectSlides[_SelectSlidePlaylist].Visible = _Data.ScreenConfig.SongSource == ESongSource.TR_PLAYLIST;
 
-            string[] categories = new string[CBase.Songs.GetNumCategories()];
+            var categories = new string[CBase.Songs.GetNumCategories()];
             for (int i = 0; i < CBase.Songs.GetNumCategories(); i++)
                 categories[i] = CBase.Songs.GetCategory(i).Name;
             _SelectSlides[_SelectSlideCategory].Clear();
             for (int i = 0; i < categories.Length; i++)
             {
-                string value = categories[i] + " (" + CBase.Songs.NumSongsInCategory(i) + " " + CBase.Language.Translate("TR_SONGS", _PartyModeID) + ")";
+                string value = categories[i] + " (" + CBase.Songs.GetNumSongsNotSungInCategory(i) + " " + CBase.Language.Translate("TR_SONGS", _PartyModeID) + ")";
                 _SelectSlides[_SelectSlideCategory].AddValue(value);
             }
             _SelectSlides[_SelectSlideCategory].Selection = _Data.ScreenConfig.CategoryID;
@@ -242,7 +241,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
             _Data.ScreenConfig.CategoryID = _SelectSlides[_SelectSlideCategory].Selection;
             _Data.ScreenConfig.GameMode = (EPartyGameMode)_SelectSlides[_SelectSlideGameMode].Selection;
 
-            EGameMode gm = EGameMode.TR_GAMEMODE_NORMAL;
+            var gm = EGameMode.TR_GAMEMODE_NORMAL;
 
             switch (_Data.ScreenConfig.GameMode)
             {
@@ -282,25 +281,22 @@ namespace VocaluxeLib.PartyModes.TicTacToe
             }
             if (_Data.ScreenConfig.SongSource == ESongSource.TR_CATEGORY)
             {
-                if (CBase.Songs.GetNumCategories() > 0)
-                {
-                    if (CBase.Songs.NumSongsInCategory(_Data.ScreenConfig.CategoryID) > 0)
-                    {
-                        CBase.Songs.SetCategory(_Data.ScreenConfig.CategoryID);
-                        _ConfigOk = false;
-                        for (int i = 0; i < CBase.Songs.NumSongsInCategory(_Data.ScreenConfig.CategoryID); i++)
-                        {
-                            _ConfigOk = CBase.Songs.GetVisibleSong(i).AvailableGameModes.Any(mode => mode == gm);
-                            if (_ConfigOk)
-                                break;
-                        }
-                        CBase.Songs.SetCategory(-1);
-                    }
-                    else
-                        _ConfigOk = false;
-                }
-                else
+                if (CBase.Songs.GetNumCategories() == 0)
                     _ConfigOk = false;
+                else if (CBase.Songs.GetNumSongsNotSungInCategory(_Data.ScreenConfig.CategoryID) <= 0)
+                    _ConfigOk = false;
+                else
+                {
+                    CBase.Songs.SetCategory(_Data.ScreenConfig.CategoryID);
+                    _ConfigOk = false;
+                    foreach (CSong song in CBase.Songs.GetVisibleSongs())
+                    {
+                        _ConfigOk = song.AvailableGameModes.Any(mode => mode == gm);
+                        if (_ConfigOk)
+                            break;
+                    }
+                    CBase.Songs.SetCategory(-1);
+                }
             }
             if (_Data.ScreenConfig.SongSource == ESongSource.TR_ALLSONGS)
             {

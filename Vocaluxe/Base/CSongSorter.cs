@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -86,35 +84,35 @@ namespace Vocaluxe.Base
 
         private int _SortByFieldArtistTitle(CSongPointer s1, CSongPointer s2)
         {
-            int res = String.Compare(s1.SortString, s2.SortString, StringComparison.OrdinalIgnoreCase);
+            int res = String.Compare(s1.SortString, s2.SortString, StringComparison.CurrentCultureIgnoreCase);
             if (res == 0)
             {
                 if (_IgnoreArticles == EOffOn.TR_CONFIG_ON)
                 {
-                    res = String.Compare(CSongs.Songs[s1.SongID].ArtistSorting, CSongs.Songs[s2.SongID].ArtistSorting, StringComparison.OrdinalIgnoreCase);
-                    return res != 0 ? res : String.Compare(CSongs.Songs[s1.SongID].TitleSorting, CSongs.Songs[s2.SongID].TitleSorting, StringComparison.OrdinalIgnoreCase);
+                    res = String.Compare(CSongs.Songs[s1.SongID].ArtistSorting, CSongs.Songs[s2.SongID].ArtistSorting, StringComparison.CurrentCultureIgnoreCase);
+                    return res != 0 ? res : String.Compare(CSongs.Songs[s1.SongID].TitleSorting, CSongs.Songs[s2.SongID].TitleSorting, StringComparison.CurrentCultureIgnoreCase);
                 }
-                res = String.Compare(CSongs.Songs[s1.SongID].Artist, CSongs.Songs[s2.SongID].Artist, StringComparison.OrdinalIgnoreCase);
-                return res != 0 ? res : String.Compare(CSongs.Songs[s1.SongID].Title, CSongs.Songs[s2.SongID].Title, StringComparison.OrdinalIgnoreCase);
+                res = String.Compare(CSongs.Songs[s1.SongID].Artist, CSongs.Songs[s2.SongID].Artist, StringComparison.CurrentCultureIgnoreCase);
+                return res != 0 ? res : String.Compare(CSongs.Songs[s1.SongID].Title, CSongs.Songs[s2.SongID].Title, StringComparison.CurrentCultureIgnoreCase);
             }
             return res;
         }
 
         private int _SortByFieldTitle(CSongPointer s1, CSongPointer s2)
         {
-            int res = String.Compare(s1.SortString, s2.SortString, StringComparison.OrdinalIgnoreCase);
+            int res = String.Compare(s1.SortString, s2.SortString, StringComparison.CurrentCultureIgnoreCase);
             if (res == 0)
             {
                 return _IgnoreArticles == EOffOn.TR_CONFIG_ON
-                           ? String.Compare(CSongs.Songs[s1.SongID].TitleSorting, CSongs.Songs[s2.SongID].TitleSorting, StringComparison.OrdinalIgnoreCase) :
-                           String.Compare(CSongs.Songs[s1.SongID].Title, CSongs.Songs[s2.SongID].Title, StringComparison.OrdinalIgnoreCase);
+                           ? String.Compare(CSongs.Songs[s1.SongID].TitleSorting, CSongs.Songs[s2.SongID].TitleSorting, StringComparison.CurrentCultureIgnoreCase) :
+                           String.Compare(CSongs.Songs[s1.SongID].Title, CSongs.Songs[s2.SongID].Title, StringComparison.CurrentCultureIgnoreCase);
             }
             return res;
         }
 
         private List<CSongPointer> _CreateSortList(string fieldName)
         {
-            List<CSongPointer> sortList = new List<CSongPointer>();
+            var sortList = new List<CSongPointer>();
             if (fieldName == "")
                 CSongs.Filter.FilteredSongs.ForEach(song => sortList.Add(new CSongPointer(song.ID, "")));
             else
@@ -135,7 +133,7 @@ namespace Vocaluxe.Base
                         sortList.Add(new CSongPointer(song.ID, (String)value));
                     else
                     {
-                        List<String> values = (List<String>)value;
+                        var values = (List<String>)value;
                         if (values.Count == 0)
                             sortList.Add(new CSongPointer(song.ID, ""));
                         else
@@ -159,10 +157,10 @@ namespace Vocaluxe.Base
             switch (_SongSorting)
             {
                 case ESongSorting.TR_CONFIG_EDITION:
-                    fieldName = "Edition";
+                    fieldName = "Editions";
                     break;
                 case ESongSorting.TR_CONFIG_GENRE:
-                    fieldName = "Genre";
+                    fieldName = "Genres";
                     break;
                 case ESongSorting.TR_CONFIG_FOLDER:
                     fieldName = "FolderName";
@@ -179,7 +177,10 @@ namespace Vocaluxe.Base
                     fieldName = "Year";
                     break;
                 case ESongSorting.TR_CONFIG_LANGUAGE:
-                    fieldName = "Language";
+                    fieldName = "Languages";
+                    break;
+                case ESongSorting.TR_CONFIG_DATEADDED:
+                    fieldName = "DateAdded";
                     break;
                 default:
                     fieldName = "";

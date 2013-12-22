@@ -1,5 +1,4 @@
-﻿#region license
-// /*
+#region license
 //     This file is part of Vocaluxe.
 // 
 //     Vocaluxe is free software: you can redistribute it and/or modify
@@ -14,7 +13,6 @@
 // 
 //     You should have received a copy of the GNU General Public License
 //     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
 #endregion
 
 using VocaluxeLib.Draw;
@@ -49,6 +47,11 @@ namespace VocaluxeLib.Profile
         public void Unload()
         {
             CBase.Drawing.RemoveTexture(ref Texture);
+        }
+
+        public string getFileName()
+        {
+            return FileName;
         }
     }
 }

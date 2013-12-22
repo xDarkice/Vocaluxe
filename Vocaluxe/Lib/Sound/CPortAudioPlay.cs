@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -91,8 +89,8 @@ namespace Vocaluxe.Lib.Sound
 
         public int Load(string media, bool prescan)
         {
-            SAudioStreams stream = new SAudioStreams(0);
-            CPortAudioStream decoder = new CPortAudioStream();
+            var stream = new SAudioStreams(0);
+            var decoder = new CPortAudioStream();
 
             if (decoder.Open(media) > -1)
             {
@@ -176,6 +174,18 @@ namespace Vocaluxe.Lib.Sound
                 {
                     if (_AlreadyAdded(stream))
                         _Decoder[_GetStreamIndex(stream)].FadeAndPause(targetVolume, seconds);
+                }
+            }
+        }
+
+        public void FadeAndClose(int stream, float targetVolume, float seconds)
+        {
+            if (_Initialized)
+            {
+                lock (_MutexDecoder)
+                {
+                    if (_AlreadyAdded(stream))
+                        _Decoder[_GetStreamIndex(stream)].FadeAndClose(targetVolume, seconds, _Closeproc, stream);
                 }
             }
         }
@@ -348,6 +358,7 @@ namespace Vocaluxe.Lib.Sound
         private float _StartVolume = 1f;
         private bool _CloseStreamAfterFade;
         private bool _PauseStreamAfterFade;
+        private bool _StopStreamAfterFade;
         private bool _Fading;
 
         private static CPortAudio.SPaHostApiInfo _ApiInfo;
@@ -512,7 +523,7 @@ namespace Vocaluxe.Lib.Sound
             Fade(targetVolume, fadeTime);
         }
 
-        public void FadeAndStop(float targetVolume, float fadeTime, Closeproc closeProc, int streamID)
+        public void FadeAndClose(float targetVolume, float fadeTime, Closeproc closeProc, int streamID)
         {
             _Closeproc = closeProc;
             _StreamID = streamID;
@@ -521,10 +532,20 @@ namespace Vocaluxe.Lib.Sound
             Fade(targetVolume, fadeTime);
         }
 
+        public void FadeAndStop(float targetVolume, float fadeTime, Closeproc closeProc, int streamID)
+        {
+            _Closeproc = closeProc;
+            _StreamID = streamID;
+            _StopStreamAfterFade = true;
+
+            Fade(targetVolume, fadeTime);
+        }
+
         public void Play()
         {
             Paused = false;
             _PauseStreamAfterFade = false;
+            _StopStreamAfterFade = false;
             lock (_Mutex)
             {
                 _ErrorCheck("StartStream", CPortAudio.Pa_StartStream(_Ptr));
@@ -599,11 +620,11 @@ namespace Vocaluxe.Lib.Sound
             _CurrentTime = 0f;
             _SyncTimer.Time = _CurrentTime;
 
-            SAudioStreams stream = new SAudioStreams(0);
+            var stream = new SAudioStreams(0);
 
-            IntPtr data = new IntPtr(0);
+            var data = new IntPtr(0);
 
-            CPortAudio.SPaStreamParameters outputParams = new CPortAudio.SPaStreamParameters
+            var outputParams = new CPortAudio.SPaStreamParameters
                 {
                     ChannelCount = format.ChannelCount,
                     Device = _ApiInfo.DefaultOutputDevice,
@@ -611,7 +632,7 @@ namespace Vocaluxe.Lib.Sound
                     SuggestedLatency = _OutputDeviceInfo.DefaultLowOutputLatency
                 };
 
-            uint bufsize = (uint)CConfig.AudioBufferSize;
+            var bufsize = (uint)CConfig.AudioBufferSize;
             lock (_Mutex)
             {
                 _ErrorCheck("OpenDefaultStream (playback)", CPortAudio.Pa_OpenStream(
@@ -797,7 +818,7 @@ namespace Vocaluxe.Lib.Sound
             CPortAudio.EPaStreamCallbackFlags statusFlags,
             IntPtr userData)
         {
-            byte[] buf = new byte[frameCount * _ByteCount];
+            var buf = new byte[frameCount * _ByteCount];
 
             if (_Paused)
             {
@@ -818,7 +839,7 @@ namespace Vocaluxe.Lib.Sound
                 {
                     _Data.Read(buf);
 
-                    byte[] b = new byte[2];
+                    var b = new byte[2];
                     for (int i = 0; i < buf.Length; i += _ByteCount)
                     {
                         b[0] = buf[i];
@@ -923,6 +944,8 @@ namespace Vocaluxe.Lib.Sound
 
                     if (_PauseStreamAfterFade)
                         Paused = true;
+                    if (_StopStreamAfterFade)
+                        Stop();
                 }
             }
         }

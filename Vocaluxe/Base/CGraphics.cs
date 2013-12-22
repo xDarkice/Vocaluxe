@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -92,6 +90,7 @@ namespace Vocaluxe.Base
 
             _PopupScreens.Add(new CPopupScreenPlayerControl());
             _PopupScreens.Add(new CPopupScreenVolumeControl());
+            _PopupScreens.Add(new CPopupScreenServerQR());
 
             CLog.StopBenchmark(1, "Build Screen List");
 
@@ -379,6 +378,37 @@ namespace Vocaluxe.Base
                 {
                     CSettings.MouseInactive();
                     _Cursor.FadeOut();
+
+                    if (keyEvent.ModAlt && keyEvent.ModCtrl && keyEvent.ModShift)
+                    {
+                        switch (keyEvent.Key)
+                        {
+                            case Keys.Left:
+                                CConfig.BorderLeft -= 1;
+                                CConfig.BorderRight -= 1;
+                                CConfig.BorderTop -= 1;
+                                CConfig.BorderBottom -= 1;
+                                break;
+                            case Keys.Right:
+                                CConfig.BorderLeft += 1;
+                                CConfig.BorderRight += 1;
+                                CConfig.BorderTop += 1;
+                                CConfig.BorderBottom += 1;
+                                break;
+                            default:
+                                break;
+                        }
+                        CConfig.SaveConfig();
+                        break;
+                    }
+                }
+
+                if (keyEvent.Key == Keys.F11)
+                {
+                    if (_CurrentPopupScreen == EPopupScreens.NoPopup)
+                        ShowPopup(EPopupScreens.PopupServerQR);
+                    else
+                        HidePopup(EPopupScreens.PopupServerQR);
                 }
 
                 if (popupPlayerControlAllowed && keyEvent.Key == Keys.Tab)

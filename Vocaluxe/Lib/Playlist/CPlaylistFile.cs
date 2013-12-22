@@ -1,5 +1,4 @@
-﻿#region license
-// /*
+#region license
 //     This file is part of Vocaluxe.
 // 
 //     Vocaluxe is free software: you can redistribute it and/or modify
@@ -14,7 +13,6 @@
 // 
 //     You should have received a copy of the GNU General Public License
 //     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
 #endregion
 
 using System;
@@ -31,31 +29,22 @@ namespace Vocaluxe.Lib.Playlist
 {
     public class CPlaylistFile
     {
-        private static readonly XmlWriterSettings _Settings = new XmlWriterSettings();
-
         public string PlaylistName;
         public string PlaylistFile;
+        public int Id = -1;
         public List<CPlaylistSong> Songs = new List<CPlaylistSong>();
 
         public CPlaylistFile()
         {
-            _Init();
             PlaylistName = string.Empty;
             PlaylistFile = string.Empty;
         }
 
-        public CPlaylistFile(string file)
+        public CPlaylistFile(string file, int id)
         {
-            _Init();
+            Id = id;
             PlaylistFile = file;
             _LoadPlaylist();
-        }
-
-        private void _Init()
-        {
-            _Settings.Indent = true;
-            _Settings.Encoding = Encoding.UTF8;
-            _Settings.ConformanceLevel = ConformanceLevel.Document;
         }
 
         public void SavePlaylist()
@@ -75,20 +64,20 @@ namespace Vocaluxe.Lib.Playlist
                     filename = "1";
 
                 int i = 0;
-                while (File.Exists(Path.Combine(CSettings.FolderPlaylists, filename + ".xml")))
+                while (File.Exists(Path.Combine(CSettings.DataPath, CSettings.FolderPlaylists, filename + ".xml")))
                 {
                     i++;
-                    if (!File.Exists(Path.Combine(CSettings.FolderPlaylists, filename + i + ".xml")))
+                    if (!File.Exists(Path.Combine(CSettings.DataPath, CSettings.FolderPlaylists, filename + i + ".xml")))
                         filename += i;
                 }
 
-                PlaylistFile = Path.Combine(CSettings.FolderPlaylists, filename + ".xml");
+                PlaylistFile = Path.Combine(CSettings.DataPath, CSettings.FolderPlaylists, filename + ".xml");
             }
 
             XmlWriter writer;
             try
             {
-                writer = XmlWriter.Create(PlaylistFile, _Settings);
+                writer = XmlWriter.Create(PlaylistFile, CConfig.XMLSettings);
             }
             catch (Exception e)
             {
@@ -147,7 +136,7 @@ namespace Vocaluxe.Lib.Playlist
                 Songs = new List<CPlaylistSong>();
 
                 List<string> songs = xmlReader.GetValues("Songs");
-                EGameMode gm = EGameMode.TR_GAMEMODE_NORMAL;
+                var gm = EGameMode.TR_GAMEMODE_NORMAL;
 
                 foreach (string song in songs)
                 {
@@ -157,7 +146,7 @@ namespace Vocaluxe.Lib.Playlist
                     xmlReader.GetValue("//root/Songs/" + song + "/Title", out title, String.Empty);
                     xmlReader.TryGetEnumValue("//root/Songs/" + song + "/GameMode", ref gm);
 
-                    CPlaylistSong playlistSong = new CPlaylistSong {SongID = -1};
+                    var playlistSong = new CPlaylistSong {SongID = -1};
 
                     foreach (CSong curSong in CSongs.AllSongs)
                     {
@@ -182,14 +171,18 @@ namespace Vocaluxe.Lib.Playlist
 
         public void AddSong(int songID)
         {
-            CPlaylistSong song = new CPlaylistSong {SongID = songID, GameMode = CSongs.GetSong(songID).IsDuet ? EGameMode.TR_GAMEMODE_DUET : EGameMode.TR_GAMEMODE_NORMAL};
+            var song = new CPlaylistSong
+                {
+                    SongID = songID,
+                    GameMode = CSongs.GetSong(songID).IsGameModeAvailable(EGameMode.TR_GAMEMODE_DUET) ? EGameMode.TR_GAMEMODE_DUET : EGameMode.TR_GAMEMODE_NORMAL
+                };
 
             Songs.Add(song);
         }
 
         public void AddSong(int songID, EGameMode gm)
         {
-            CPlaylistSong song = new CPlaylistSong {SongID = songID, GameMode = gm};
+            var song = new CPlaylistSong {SongID = songID, GameMode = gm};
 
             Songs.Add(song);
         }
@@ -216,7 +209,7 @@ namespace Vocaluxe.Lib.Playlist
             if (sourceNr < 0 || destNr < 0 || sourceNr == destNr || sourceNr > Songs.Count - 1 || destNr > Songs.Count - 1)
                 return;
 
-            CPlaylistSong ps = new CPlaylistSong(Songs[sourceNr]);
+            var ps = new CPlaylistSong(Songs[sourceNr]);
             Songs.RemoveAt(sourceNr);
             Songs.Insert(destNr, ps);
         }

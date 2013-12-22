@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -65,14 +63,14 @@ namespace Vocaluxe.Lib.Sound
 
         public int Load(string media)
         {
-            Uri u = new Uri(media);
+            var u = new Uri(media);
             int i = CGstreamerAudioWrapper.Load(u.AbsoluteUri);
             return i;
         }
 
         public int Load(string media, bool prescan)
         {
-            Uri u = new Uri(media);
+            var u = new Uri(media);
             int i = CGstreamerAudioWrapper.Load(u.AbsoluteUri, prescan);
             return i;
         }
@@ -112,7 +110,7 @@ namespace Vocaluxe.Lib.Sound
             CGstreamerAudioWrapper.FadeAndPause(stream, targetVolume, seconds);
         }
 
-        public void FadeAndStop(int stream, float targetVolume, float seconds)
+        public void FadeAndClose(int stream, float targetVolume, float seconds)
         {
             CGstreamerAudioWrapper.FadeAndStop(stream, targetVolume, seconds);
         }
@@ -160,6 +158,12 @@ namespace Vocaluxe.Lib.Sound
         public void Update()
         {
             CGstreamerAudioWrapper.Update();
+        }
+
+
+        public void FadeAndStop(int stream, float targetVolume, float seconds)
+        {
+            throw new NotImplementedException();
         }
     }
 }

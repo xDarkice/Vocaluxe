@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -35,10 +33,19 @@ namespace Vocaluxe.Base
 {
     static class CConfig
     {
-        private static readonly XmlWriterSettings _Settings = new XmlWriterSettings();
+        /// <summary>
+        /// Uniform settings for writing XML files. ALWAYS use this!
+        /// </summary>
+        public static readonly XmlWriterSettings XMLSettings = new XmlWriterSettings
+            {
+                Indent = true,
+                Encoding = Encoding.UTF8,
+                ConformanceLevel = ConformanceLevel.Document
+            };
 
         // Debug
         public static EDebugLevel DebugLevel = EDebugLevel.TR_CONFIG_OFF;
+        public static EOffOn SaveModifiedSongs = EOffOn.TR_CONFIG_OFF;
 
         // Graphics
 #if WIN
@@ -52,6 +59,11 @@ namespace Vocaluxe.Base
 
         public static int ScreenW = 1024;
         public static int ScreenH = 576;
+
+        public static int BorderLeft = 0;
+        public static int BorderRight = 0;
+        public static int BorderTop = 0;
+        public static int BorderBottom = 0;
 
         public static EAntiAliasingModes AAMode = EAntiAliasingModes.X0;
 
@@ -117,7 +129,7 @@ namespace Vocaluxe.Base
         public static EOffOn ServerActive = EOffOn.TR_CONFIG_OFF;
         public static EOffOn ServerEncryption = EOffOn.TR_CONFIG_OFF;
         public static int ServerPort = 3000;
-        public static string ServerPassword = "vocaluxe";
+        //public static string ServerPassword = "vocaluxe";
 
         //Lists to save parameters and values
         private static readonly List<string> _Params = new List<string>();
@@ -142,16 +154,19 @@ namespace Vocaluxe.Base
 
         public static void Init()
         {
-            _Settings.Indent = true;
-            _Settings.Encoding = Encoding.UTF8;
-            _Settings.ConformanceLevel = ConformanceLevel.Document;
-
             SongFolder.Add(Path.Combine(Directory.GetCurrentDirectory(), CSettings.FolderSongs));
+
+#if INSTALLER
+            SongFolder.Add(Path.Combine(CSettings.DataPath, CSettings.FolderSongs));            
+#endif
+
+            foreach (string folder in SongFolder)
+                CSettings.CreateFolder(folder);
 
             MicConfig = new SMicConfig[CSettings.MaxNumPlayer];
 
             // Init config file
-            if (!File.Exists(CSettings.FileConfig))
+            if (!File.Exists(Path.Combine(CSettings.DataPath, CSettings.FileConfig)))
                 SaveConfig();
 
             _LoadConfig();
@@ -159,11 +174,12 @@ namespace Vocaluxe.Base
 
         private static void _LoadConfig()
         {
-            CXMLReader xmlReader = CXMLReader.OpenFile(CSettings.FileConfig);
+            CXMLReader xmlReader = CXMLReader.OpenFile(Path.Combine(CSettings.DataPath, CSettings.FileConfig));
             if (xmlReader == null)
                 return;
 
             xmlReader.TryGetEnumValue("//root/Debug/DebugLevel", ref DebugLevel);
+            xmlReader.TryGetEnumValue("//root/Debug/SaveModifiedSongs", ref SaveModifiedSongs);
 
             #region Graphics
             xmlReader.TryGetEnumValue("//root/Graphics/Renderer", ref Renderer);
@@ -172,6 +188,12 @@ namespace Vocaluxe.Base
 
             xmlReader.TryGetIntValue("//root/Graphics/ScreenW", ref ScreenW);
             xmlReader.TryGetIntValue("//root/Graphics/ScreenH", ref ScreenH);
+
+            xmlReader.TryGetIntValue("//root/Graphics/BorderLeft", ref BorderLeft);
+            xmlReader.TryGetIntValue("//root/Graphics/BorderRight", ref BorderRight);
+            xmlReader.TryGetIntValue("//root/Graphics/BorderTop", ref BorderTop);
+            xmlReader.TryGetIntValue("//root/Graphics/BorderBottom", ref BorderBottom);
+
             xmlReader.TryGetEnumValue("//root/Graphics/AAMode", ref AAMode);
             xmlReader.TryGetFloatValue("//root/Graphics/MaxFPS", ref MaxFPS);
             xmlReader.TryGetEnumValue("//root/Graphics/VSync", ref VSync);
@@ -288,7 +310,7 @@ namespace Vocaluxe.Base
             if (ServerPort < 1 || ServerPort > 65535)
                 ServerPort = 3000;
 
-            xmlReader.GetValue("//root/Server/ServerPassword", out ServerPassword, ServerPassword);
+            //xmlReader.GetValue("//root/Server/ServerPassword", out ServerPassword, ServerPassword);
             #endregion Server
         }
 
@@ -297,7 +319,7 @@ namespace Vocaluxe.Base
             XmlWriter writer = null;
             try
             {
-                writer = XmlWriter.Create(CSettings.FileConfig, _Settings);
+                writer = XmlWriter.Create(Path.Combine(CSettings.DataPath, CSettings.FileConfig), XMLSettings);
                 writer.WriteStartDocument();
                 writer.WriteStartElement("root");
 
@@ -323,6 +345,9 @@ namespace Vocaluxe.Base
                 writer.WriteComment("DebugLevel: " + CHelper.ListStrings(Enum.GetNames(typeof(EDebugLevel))));
                 writer.WriteElementString("DebugLevel", Enum.GetName(typeof(EDebugLevel), DebugLevel));
 
+                writer.WriteComment("SaveModifiedSongs: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn))));
+                writer.WriteElementString("SaveModifiedSongs", Enum.GetName(typeof(EOffOn), SaveModifiedSongs));
+
                 writer.WriteEndElement();
                 #endregion Debug
 
@@ -341,6 +366,12 @@ namespace Vocaluxe.Base
                 writer.WriteComment("Screen width and height (pixels)");
                 writer.WriteElementString("ScreenW", ScreenW.ToString());
                 writer.WriteElementString("ScreenH", ScreenH.ToString());
+
+                writer.WriteComment("Screen borders (pixels)");
+                writer.WriteElementString("BorderLeft", BorderLeft.ToString());
+                writer.WriteElementString("BorderRight", BorderRight.ToString());
+                writer.WriteElementString("BorderTop", BorderTop.ToString());
+                writer.WriteElementString("BorderBottom", BorderBottom.ToString());
 
                 writer.WriteComment("AAMode: " + CHelper.ListStrings(Enum.GetNames(typeof(EAntiAliasingModes))));
                 writer.WriteElementString("AAMode", Enum.GetName(typeof(EAntiAliasingModes), AAMode));
@@ -559,8 +590,8 @@ namespace Vocaluxe.Base
                 writer.WriteComment("Server Port (default: 3000) [1..65535]");
                 writer.WriteElementString("ServerPort", ServerPort.ToString());
 
-                writer.WriteComment("Server Password (default: vocaluxe)");
-                writer.WriteElementString("ServerPassword", ServerPassword);
+                //writer.WriteComment("Server Password (default: vocaluxe)");
+                //writer.WriteElementString("ServerPassword", ServerPassword);
 
                 writer.WriteEndElement();
                 #endregion Server
@@ -777,7 +808,8 @@ namespace Vocaluxe.Base
 
                     case "profilefolder":
                         CSettings.CreateFolder(value);
-                        CSettings.FolderProfiles = value;
+                        CSettings.FoldersProfiles.Clear();
+                        CSettings.FoldersProfiles.Add(value);
                         break;
                 }
             }

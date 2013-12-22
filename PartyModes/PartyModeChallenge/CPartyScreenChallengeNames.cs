@@ -1,20 +1,18 @@
 #region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -22,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using VocaluxeLib.Menu;
+using VocaluxeLib.Profile;
 
 namespace VocaluxeLib.PartyModes.Challenge
 {
@@ -62,7 +61,6 @@ namespace VocaluxeLib.PartyModes.Challenge
         private bool _SelectingMouseActive;
         private int _OldMouseX;
         private int _OldMouseY;
-        private int _SelectedPlayerNr = -1;
         private bool _ButtonsAdded;
 
         private int _NumPlayer = 4;
@@ -89,7 +87,7 @@ namespace VocaluxeLib.PartyModes.Challenge
             _ThemeButtons = new string[] {_ButtonBack, _ButtonNext, _ButtonPlayerDestination, _ButtonPlayerChoose};
 
             _Data = new SDataFromScreen();
-            SFromScreenNames names = new SFromScreenNames {FadeBack = false, ProfileIDs = new List<int>()};
+            var names = new SFromScreenNames {FadeBack = false, ProfileIDs = new List<int>()};
             _Data.ScreenNames = names;
         }
 
@@ -97,7 +95,7 @@ namespace VocaluxeLib.PartyModes.Challenge
         {
             try
             {
-                SDataToScreenNames config = (SDataToScreenNames)receivedData;
+                var config = (SDataToScreenNames)receivedData;
                 _Data.ScreenNames.ProfileIDs = config.ProfileIDs ?? new List<int>();
 
                 _NumPlayer = config.NumPlayer;
@@ -148,34 +146,6 @@ namespace VocaluxeLib.PartyModes.Challenge
         {
             base.HandleMouse(mouseEvent);
 
-            /*
-            //Check if LeftButton is hold and Select-Mode inactive
-            if (MouseEvent.LBH && !SelectingMouseActive)
-            {
-                //Save mouse-coords
-                OldMouseX = MouseEvent.X;
-                OldMouseY = MouseEvent.Y;
-                //Check if mouse if over tile
-                for (int i = 0; i < PlayerChooseButtons.Count; i++)
-                {
-                    if (PlayerChooseButtons[i].Button.Selected)
-                    {
-                        SelectedPlayerNr = PlayerChooseButtons[i].ProfileID;
-                        if (SelectedPlayerNr != -1)
-                        {
-                            //Activate mouse-selecting
-                            SelectingMouseActive = true;
-                            //Update of Drag/Drop-Texture
-                            chooseAvatarStatic.Visible = true;
-                            chooseAvatarStatic.Rect = PlayerChooseButtons[i].Button.Rect;
-                            chooseAvatarStatic.Rect.Z = -100;
-                            chooseAvatarStatic.Color = new SColorF(1, 1, 1, 1);
-                            chooseAvatarStatic.Texture = CBase.Profiles.GetProfiles()[SelectedPlayerNr].Avatar.Texture;
-                        }
-                    }
-                }
-            }*/
-
             //Check if LeftButton is hold and Select-Mode active
             if (mouseEvent.LBH && _SelectingMouseActive)
             {
@@ -188,44 +158,6 @@ namespace VocaluxeLib.PartyModes.Challenge
                 // LeftButton isn't hold anymore, but Selec-Mode is still active -> "Drop" of Avatar
             else if (_SelectingMouseActive)
             {
-                //Check if really a player was selected
-                if (_SelectedPlayerNr != -1)
-                {
-                    //Foreach Drop-Area
-                    for (int i = 0; i < _PlayerDestinationButtons.Count; i++)
-                    {
-                        //Check first, if area is "active"
-                        if (_PlayerDestinationButtons[i].Visible)
-                        {
-                            //Check if Mouse is in area
-                            if (CHelper.IsInBounds(_PlayerDestinationButtons[i].Rect, mouseEvent))
-                            {
-                                int added = -1;
-                                //Add Player-ID to list.
-                                if (_Data.ScreenNames.ProfileIDs.Count < (i + 1))
-                                {
-                                    _Data.ScreenNames.ProfileIDs.Add(_SelectedPlayerNr);
-                                    added = _Data.ScreenNames.ProfileIDs.Count - 1;
-                                }
-                                else if (_Data.ScreenNames.ProfileIDs.Count >= (i + 1))
-                                {
-                                    _Data.ScreenNames.ProfileIDs[i] = _SelectedPlayerNr;
-                                    added = i;
-                                }
-                                _UpdateButtonNext();
-                                //Update texture and name
-                                _PlayerDestinationButtons[added].Color = new SColorF(1, 1, 1, 0.6f);
-                                _PlayerDestinationButtons[added].SelColor = new SColorF(1, 1, 1, 1);
-                                _PlayerDestinationButtons[added].Texture = _ChooseAvatarStatic.Texture;
-                                _PlayerDestinationButtons[added].SelTexture = _ChooseAvatarStatic.Texture;
-                                _PlayerDestinationButtons[added].Text.Text = CBase.Profiles.GetProfiles()[_SelectedPlayerNr].PlayerName;
-                                //Update Tiles-List
-                                _UpdateButtonPlayerChoose();
-                            }
-                        }
-                    }
-                    _SelectedPlayerNr = -1;
-                }
                 //Reset variables
                 _SelectingMouseActive = false;
                 _ChooseAvatarStatic.Visible = false;
@@ -314,7 +246,7 @@ namespace VocaluxeLib.PartyModes.Challenge
                 CButton b = GetNewButton(_Buttons[_ButtonPlayerChoose]);
                 b.Rect.X = _PlayerChooseButtonsFirstX + column * (b.Rect.W + _PlayerChooseButtonsSpaceH);
                 b.Rect.Y = _PlayerChooseButtonsFirstY + row * (b.Rect.H + _PlayerChooseButtonsSpaceW);
-                CPlayerChooseButton pcb = new CPlayerChooseButton {Button = b, ProfileID = -1};
+                var pcb = new CPlayerChooseButton {Button = b, ProfileID = -1};
                 _PlayerChooseButtons.Add(pcb);
                 column++;
                 if (column >= _PlayerChooseButtonsNumH)
@@ -350,12 +282,11 @@ namespace VocaluxeLib.PartyModes.Challenge
                 {
                     if ((i + offset * numButtonPlayerChoose) < _PlayerChooseButtonsVisibleProfiles.Count)
                     {
-                        _PlayerChooseButtons[i].ProfileID = _PlayerChooseButtonsVisibleProfiles[i + offset * numButtonPlayerChoose];
-                        _PlayerChooseButtons[i].Button.Text.Text = CBase.Profiles.GetProfiles()[_PlayerChooseButtonsVisibleProfiles[i + offset * numButtonPlayerChoose]].PlayerName;
-                        _PlayerChooseButtons[i].Button.Texture =
-                            CBase.Profiles.GetProfiles()[_PlayerChooseButtonsVisibleProfiles[i + offset * numButtonPlayerChoose]].Avatar.Texture;
-                        _PlayerChooseButtons[i].Button.SelTexture =
-                            CBase.Profiles.GetProfiles()[_PlayerChooseButtonsVisibleProfiles[i + offset * numButtonPlayerChoose]].Avatar.Texture;
+                        int id = _PlayerChooseButtonsVisibleProfiles[i + offset * numButtonPlayerChoose];
+                        _PlayerChooseButtons[i].ProfileID = id;
+                        _PlayerChooseButtons[i].Button.Text.Text = CBase.Profiles.GetPlayerName(id);
+                        _PlayerChooseButtons[i].Button.Texture = CBase.Profiles.GetAvatar(id);
+                        _PlayerChooseButtons[i].Button.SelTexture = CBase.Profiles.GetAvatar(id);
                         _PlayerChooseButtons[i].Button.Color = new SColorF(1, 1, 1, 0.6f);
                         _PlayerChooseButtons[i].Button.SelColor = new SColorF(1, 1, 1, 1);
                         _PlayerChooseButtons[i].Button.Enabled = true;
@@ -377,14 +308,15 @@ namespace VocaluxeLib.PartyModes.Challenge
         private void _UpdateVisibleProfiles()
         {
             _PlayerChooseButtonsVisibleProfiles.Clear();
-            for (int i = 0; i < CBase.Profiles.GetProfiles().Length; i++)
+            CProfile[] profiles = CBase.Profiles.GetProfiles();
+            foreach (CProfile profile in profiles)
             {
                 bool visible = false;
                 //Show profile only if active
-                if (CBase.Profiles.GetProfiles()[i].Active == EOffOn.TR_CONFIG_ON)
-                    visible = _Data.ScreenNames.ProfileIDs.All(profileID => profileID != i);
+                if (profile.Active == EOffOn.TR_CONFIG_ON)
+                    visible = _Data.ScreenNames.ProfileIDs.All(profileID => profileID != profile.ID);
                 if (visible)
-                    _PlayerChooseButtonsVisibleProfiles.Add(i);
+                    _PlayerChooseButtonsVisibleProfiles.Add(profile.ID);
             }
         }
 
@@ -409,11 +341,12 @@ namespace VocaluxeLib.PartyModes.Challenge
                 {
                     if (_Data.ScreenNames.ProfileIDs[i] != -1)
                     {
+                        int id = _Data.ScreenNames.ProfileIDs[i];
                         _PlayerDestinationButtons[i].Color = new SColorF(1, 1, 1, 0.6f);
                         _PlayerDestinationButtons[i].SelColor = new SColorF(1, 1, 1, 1);
-                        _PlayerDestinationButtons[i].Texture = CBase.Profiles.GetProfiles()[_Data.ScreenNames.ProfileIDs[i]].Avatar.Texture;
-                        _PlayerDestinationButtons[i].SelTexture = CBase.Profiles.GetProfiles()[_Data.ScreenNames.ProfileIDs[i]].Avatar.Texture;
-                        _PlayerDestinationButtons[i].Text.Text = CBase.Profiles.GetProfiles()[_Data.ScreenNames.ProfileIDs[i]].PlayerName;
+                        _PlayerDestinationButtons[i].Texture = CBase.Profiles.GetAvatar(id);
+                        _PlayerDestinationButtons[i].SelTexture = CBase.Profiles.GetAvatar(id);
+                        _PlayerDestinationButtons[i].Text.Text = CBase.Profiles.GetPlayerName(id);
                         _PlayerDestinationButtons[i].Enabled = true;
                     }
                 }
@@ -444,17 +377,18 @@ namespace VocaluxeLib.PartyModes.Challenge
         {
             foreach (CPlayerChooseButton button in _PlayerChooseButtons)
             {
-                if (!button.Button.Selected || button.ProfileID == -1 || _Data.ScreenNames.ProfileIDs.Count >= _NumPlayer)
+                int id = button.ProfileID;
+                if (!button.Button.Selected || id == -1 || _Data.ScreenNames.ProfileIDs.Count >= _NumPlayer)
                     continue;
-                _Data.ScreenNames.ProfileIDs.Add(button.ProfileID);
+                _Data.ScreenNames.ProfileIDs.Add(id);
                 int added = _Data.ScreenNames.ProfileIDs.Count - 1;
                 _UpdateButtonNext();
                 //Update texture and name
                 _PlayerDestinationButtons[added].Color = new SColorF(1, 1, 1, 0.6f);
                 _PlayerDestinationButtons[added].SelColor = new SColorF(1, 1, 1, 1);
-                _PlayerDestinationButtons[added].Texture = CBase.Profiles.GetProfiles()[button.ProfileID].Avatar.Texture;
-                _PlayerDestinationButtons[added].SelTexture = CBase.Profiles.GetProfiles()[button.ProfileID].Avatar.Texture;
-                _PlayerDestinationButtons[added].Text.Text = CBase.Profiles.GetProfiles()[button.ProfileID].PlayerName;
+                _PlayerDestinationButtons[added].Texture = CBase.Profiles.GetAvatar(id);
+                _PlayerDestinationButtons[added].SelTexture = CBase.Profiles.GetAvatar(id);
+                _PlayerDestinationButtons[added].Text.Text = CBase.Profiles.GetPlayerName(id);
                 _PlayerDestinationButtons[added].Enabled = true;
                 //Update Tiles-List
                 _UpdateButtonPlayerChoose();

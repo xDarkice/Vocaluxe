@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -90,11 +88,6 @@ namespace Vocaluxe.Base
         public static int SongID
         {
             get { return _CurrentPlaylistElement.SongID; }
-        }
-
-        public static bool Duet
-        {
-            get { return _CurrentPlaylistElement.Duet; }
         }
 
         public static bool SongHasVideo
@@ -173,7 +166,7 @@ namespace Vocaluxe.Base
                 CDraw.RemoveTexture(ref _CurrentVideoTexture);
                 _Video = -1;
             }
-            CSound.FadeAndStop(_CurrentMusicStream, 0f, CSettings.BackgroundMusicFadeTime);
+            CSound.FadeAndClose(_CurrentMusicStream, 0f, CSettings.BackgroundMusicFadeTime);
             _CurrentMusicStream = -1;
 
             _CurrentPlaylistElement = new CPlaylistElement();
@@ -580,17 +573,6 @@ namespace Vocaluxe.Base
                     return _Song.VideoGap;
 
                 return 0;
-            }
-        }
-
-        public bool Duet
-        {
-            get
-            {
-                if (_Song != null)
-                    return _Song.IsDuet;
-
-                return false;
             }
         }
 

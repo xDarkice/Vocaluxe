@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -44,15 +42,15 @@ namespace VocaluxeLib.Menu
     {
         private class CTile
         {
-            public int PlayerNr;
+            public int ProfileID;
             public readonly CStatic Avatar;
             public readonly CText Name;
 
-            public CTile(CStatic av, CText tex, int pl)
+            public CTile(CStatic av, CText tex, int pID)
             {
                 Avatar = av;
                 Name = tex;
-                PlayerNr = pl;
+                ProfileID = pID;
             }
         }
 
@@ -281,7 +279,7 @@ namespace VocaluxeLib.Menu
                 case Keys.Right:
                     if (_ActualSelection + 1 < _Tiles.Count)
                     {
-                        if (_Tiles[_ActualSelection + 1].PlayerNr != -1)
+                        if (_Tiles[_ActualSelection + 1].ProfileID != -1)
                             _ActualSelection++;
                     }
                     else
@@ -316,7 +314,7 @@ namespace VocaluxeLib.Menu
                 case Keys.Down:
                     if (_ActualSelection + _NumW < _Tiles.Count)
                     {
-                        if (_Tiles[_ActualSelection + _NumW].PlayerNr != -1)
+                        if (_Tiles[_ActualSelection + _NumW].ProfileID != -1)
                             _ActualSelection += _NumW;
                     }
                     else
@@ -326,11 +324,11 @@ namespace VocaluxeLib.Menu
                         if (offset != Offset)
                         {
                             _ActualSelection = _ActualSelection - _Tiles.Count + _NumW;
-                            if (_Tiles[_ActualSelection].PlayerNr == -1)
+                            if (_Tiles[_ActualSelection].ProfileID == -1)
                             {
                                 for (int i = _Tiles.Count - 1; i >= 0; i--)
                                 {
-                                    if (_Tiles[i].PlayerNr != -1)
+                                    if (_Tiles[i].ProfileID != -1)
                                     {
                                         _ActualSelection = i;
                                         break;
@@ -372,7 +370,7 @@ namespace VocaluxeLib.Menu
                 _Player = player;
                 _PlayerSelector.Color = CBase.Theme.GetPlayerColor(player);
             }
-                //Normal activation
+            //Normal activation
             else if (active)
             {
                 Selection = 0;
@@ -381,7 +379,7 @@ namespace VocaluxeLib.Menu
                 _PlayerSelector.Color = CBase.Theme.GetPlayerColor(player);
                 _PlayerSelector.Visible = true;
             }
-                //Deactivate
+            //Deactivate
             else
             {
                 Selection = -1;
@@ -409,17 +407,17 @@ namespace VocaluxeLib.Menu
             {
                 if ((i + offset * _Tiles.Count) < _VisibleProfiles.Count)
                 {
-                    _Tiles[i].Avatar.Texture = CBase.Profiles.GetProfiles()[_VisibleProfiles[i + offset * _Tiles.Count]].Avatar.Texture;
+                    _Tiles[i].Avatar.Texture = CBase.Profiles.GetAvatar(_VisibleProfiles[i + offset * _Tiles.Count]);
                     _Tiles[i].Avatar.Color = new SColorF(1, 1, 1, 1);
-                    _Tiles[i].Name.Text = CBase.Profiles.GetProfiles()[_VisibleProfiles[i + offset * _Tiles.Count]].PlayerName;
-                    _Tiles[i].PlayerNr = _VisibleProfiles[i + offset * _Tiles.Count];
+                    _Tiles[i].Name.Text = CBase.Profiles.GetPlayerName(_VisibleProfiles[i + offset * _Tiles.Count]); ;
+                    _Tiles[i].ProfileID = _VisibleProfiles[i + offset * _Tiles.Count];
                 }
                 else
                 {
                     _Tiles[i].Avatar.Texture = _TextureEmptyTile;
                     _Tiles[i].Avatar.Color = ColorEmptyTile;
                     _Tiles[i].Name.Text = "";
-                    _Tiles[i].PlayerNr = -1;
+                    _Tiles[i].ProfileID = -1;
                 }
             }
             Offset = offset;
@@ -441,7 +439,7 @@ namespace VocaluxeLib.Menu
             foreach (CTile tile in _Tiles)
             {
                 if (CHelper.IsInBounds(tile.Avatar.Rect, mevent))
-                    return tile.PlayerNr;
+                    return tile.ProfileID;
             }
 
             return -1;
@@ -458,7 +456,7 @@ namespace VocaluxeLib.Menu
             return new CStatic(_PartyModeID);
         }
 
-        public void UnloadTextures() {}
+        public void UnloadTextures() { }
 
         public void LoadTextures()
         {
@@ -487,10 +485,10 @@ namespace VocaluxeLib.Menu
             {
                 for (int j = 0; j < _NumW; j++)
                 {
-                    SRectF rect = new SRectF(Rect.X + j * (_TileW + _SpaceW), Rect.Y + i * (_TileH + _SpaceH), _TileW, _TileH, Rect.Z);
-                    CStatic tileStatic = new CStatic(_PartyModeID, _TextureEmptyTile, ColorEmptyTile, rect) {Aspect = EAspect.Crop};
-                    CText tileText = new CText(rect.X + rect.W / 2, rect.Y + rect.H + _Theme.NameSpace, rect.Z, _Theme.NameHeight, rect.W, EAlignment.Center, _Theme.NameStyle,
-                                               _Theme.NameFont, _Theme.NameColor, "");
+                    var rect = new SRectF(Rect.X + j * (_TileW + _SpaceW), Rect.Y + i * (_TileH + _SpaceH), _TileW, _TileH, Rect.Z);
+                    var tileStatic = new CStatic(_PartyModeID, _TextureEmptyTile, ColorEmptyTile, rect) { Aspect = EAspect.Crop };
+                    var tileText = new CText(rect.X + rect.W / 2, rect.Y + rect.H + _Theme.NameSpace, rect.Z, _Theme.NameHeight, rect.W, EAlignment.Center, _Theme.NameStyle,
+                                             _Theme.NameFont, _Theme.NameColor, "");
                     _Tiles.Add(new CTile(tileStatic, tileText, -1));
                 }
             }
@@ -501,21 +499,22 @@ namespace VocaluxeLib.Menu
             _VisibleProfiles.Clear();
             CProfile[] profiles = CBase.Profiles.GetProfiles();
 
-            for (int i = 0; i < profiles.Length; i++)
+            foreach (CProfile profile in profiles)
             {
-                bool visible = profiles[i].Active == EOffOn.TR_CONFIG_ON;
+                bool visible = profile.Active == EOffOn.TR_CONFIG_ON;
                 if (visible)
                 {
                     //Show profile only if active
                     for (int p = 0; p < CBase.Game.GetNumPlayer(); p++)
                     {
                         //Don't show profile if is selected, but if selected and guest
-                        if (CBase.Game.GetPlayers()[p].ProfileID == profiles[i].ID && profiles[i].GuestProfile == EOffOn.TR_CONFIG_OFF)
+                        if (CBase.Game.GetPlayers()[p].ProfileID == profile.ID
+                            && profile.UserRole >= EUserRole.TR_USERROLE_NORMAL)
                             visible = false;
                     }
                 }
                 if (visible)
-                    _VisibleProfiles.Add(i);
+                    _VisibleProfiles.Add(profile.ID);
             }
         }
 

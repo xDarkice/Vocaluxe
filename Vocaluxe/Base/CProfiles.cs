@@ -1,5 +1,4 @@
-﻿#region license
-// /*
+#region license
 //     This file is part of Vocaluxe.
 // 
 //     Vocaluxe is free software: you can redistribute it and/or modify
@@ -14,7 +13,6 @@
 // 
 //     You should have received a copy of the GNU General Public License
 //     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
 #endregion
 
 using System;
@@ -179,7 +177,7 @@ namespace Vocaluxe.Base
             if (_ProfileChangedCallbacks.Count == 0)
                 return;
 
-            EProfileChangedFlags flags = EProfileChangedFlags.None;
+            var flags = EProfileChangedFlags.None;
 
             if (_AvatarsChanged)
                 flags = EProfileChangedFlags.Avatar;
@@ -214,7 +212,7 @@ namespace Vocaluxe.Base
 
         public static void LoadProfiles()
         {
-            SChange change = new SChange {Action = EAction.LoadProfiles};
+            var change = new SChange { Action = EAction.LoadProfiles };
 
             lock (_QueueMutex)
             {
@@ -224,7 +222,7 @@ namespace Vocaluxe.Base
 
         public static void LoadAvatars()
         {
-            SChange change = new SChange {Action = EAction.LoadAvatars};
+            var change = new SChange { Action = EAction.LoadAvatars };
 
             lock (_QueueMutex)
             {
@@ -237,7 +235,7 @@ namespace Vocaluxe.Base
             if (newProfile == null)
                 return;
 
-            SChange change = new SChange {Action = EAction.AddProfile, Profile = newProfile};
+            var change = new SChange { Action = EAction.AddProfile, Profile = newProfile };
 
             lock (_QueueMutex)
             {
@@ -250,7 +248,7 @@ namespace Vocaluxe.Base
             if (editProfile == null)
                 return;
 
-            SChange change = new SChange {Action = EAction.EditProfile, Profile = editProfile};
+            var change = new SChange { Action = EAction.EditProfile, Profile = editProfile };
 
             lock (_QueueMutex)
             {
@@ -263,7 +261,7 @@ namespace Vocaluxe.Base
             if (!IsProfileIDValid(profileID))
                 return;
 
-            SChange change = new SChange {Action = EAction.DeleteProfile, ProfileID = profileID};
+            var change = new SChange { Action = EAction.DeleteProfile, ProfileID = profileID };
 
             lock (_QueueMutex)
             {
@@ -276,7 +274,7 @@ namespace Vocaluxe.Base
             if (newAvatar == null)
                 return;
 
-            SChange change = new SChange {Action = EAction.AddAvatar, Avatar = newAvatar};
+            var change = new SChange { Action = EAction.AddAvatar, Avatar = newAvatar };
 
             lock (_QueueMutex)
             {
@@ -289,7 +287,7 @@ namespace Vocaluxe.Base
             if (editAvatar == null)
                 return;
 
-            SChange change = new SChange {Action = EAction.EditAvatar, Avatar = editAvatar};
+            var change = new SChange { Action = EAction.EditAvatar, Avatar = editAvatar };
 
             lock (_QueueMutex)
             {
@@ -302,9 +300,19 @@ namespace Vocaluxe.Base
             if (_Profiles.Count == 0)
                 return null;
 
-            List<CProfile> list = new List<CProfile>(_Profiles.Values);
+            var list = new List<CProfile>(_Profiles.Values);
             list.Sort(_CompareByPlayerName);
             return list.ToArray();
+        }
+
+        public static CProfile GetProfile(int profileID)
+        {
+            if (!IsProfileIDValid(profileID))
+            {
+                return null;
+            }
+
+            return _Profiles[profileID];
         }
 
         public static IEnumerable<CAvatar> GetAvatars()
@@ -312,7 +320,7 @@ namespace Vocaluxe.Base
             if (_Avatars.Count == 0)
                 return null;
 
-            CAvatar[] result = new CAvatar[_Avatars.Count];
+            var result = new CAvatar[_Avatars.Count];
             _Avatars.Values.CopyTo(result, 0);
 
             return result;
@@ -320,9 +328,9 @@ namespace Vocaluxe.Base
 
         public static int NewProfile(string fileName = "")
         {
-            CProfile profile = new CProfile
+            var profile = new CProfile
                 {
-                    FileName = fileName != "" ? Path.Combine(CSettings.FolderProfiles, fileName) : String.Empty
+                    FileName = fileName != "" ? Path.Combine(CSettings.DataPath, CSettings.FolderProfiles, fileName) : String.Empty
                 };
 
             if (File.Exists(profile.FileName))
@@ -336,7 +344,7 @@ namespace Vocaluxe.Base
 
         public static int NewAvatar(string fileName)
         {
-            CAvatar avatar = new CAvatar(-1);
+            var avatar = new CAvatar(-1);
             if (!avatar.LoadFromFile(fileName))
                 return -1;
 
@@ -425,17 +433,19 @@ namespace Vocaluxe.Base
             _Profiles[profileID].Difficulty = difficulty;
         }
 
-        public static EOffOn GetGuestProfile(int profileID)
+        public static EUserRole GetUserRoleProfile(int profileID)
         {
-            return IsProfileIDValid(profileID) ? _Profiles[profileID].GuestProfile : EOffOn.TR_CONFIG_OFF;
+            return IsProfileIDValid(profileID) ? _Profiles[profileID].UserRole : EUserRole.TR_USERROLE_GUEST;
         }
 
-        public static void SetGuestProfile(int profileID, EOffOn option)
+        public static void SetUserRoleProfile(int profileID, EUserRole option)
         {
             if (!IsProfileIDValid(profileID))
                 return;
-
-            _Profiles[profileID].GuestProfile = option;
+            //Only allow the change of TR_USERROLE_GUEST, TR_USERROLE_NORMAL and TR_USERROLE_ADMIN
+            const EUserRole mask = (EUserRole.TR_USERROLE_GUEST | EUserRole.TR_USERROLE_NORMAL | EUserRole.TR_USERROLE_ADMIN);
+            option &= mask;
+            _Profiles[profileID].UserRole = (_Profiles[profileID].UserRole & ~mask) | option;
         }
 
         public static EOffOn GetActive(int profileID)
@@ -456,7 +466,7 @@ namespace Vocaluxe.Base
             if (!IsProfileIDValid(profileID))
                 return true; // this will prevent from saving dummy profiles to highscore db
 
-            return _Profiles[profileID].GuestProfile == EOffOn.TR_CONFIG_ON;
+            return !_Profiles[profileID].UserRole.HasFlag(EUserRole.TR_USERROLE_NORMAL);
         }
 
         public static bool IsActive(int profileID)
@@ -480,6 +490,19 @@ namespace Vocaluxe.Base
                 return -1;
 
             return _Profiles[profileID].Avatar.ID;
+        }
+
+        public static CAvatar GetAvatar(int profileID)
+        {
+            if (!IsProfileIDValid(profileID))
+                return null;
+
+            return _Profiles[profileID].Avatar;
+        }
+
+        public static int GetProfileID(int num)
+        {
+            return _Profiles[num].ID;
         }
         #endregion profile properties
 
@@ -506,10 +529,10 @@ namespace Vocaluxe.Base
         {
             _LoadAvatars();
 
-            List<string> knownFiles = new List<string>();
+            var knownFiles = new List<string>();
             if (_Profiles.Count > 0)
             {
-                int[] ids = new int[_Profiles.Keys.Count];
+                var ids = new int[_Profiles.Keys.Count];
                 _Profiles.Keys.CopyTo(ids, 0);
                 foreach (int id in ids)
                 {
@@ -523,17 +546,20 @@ namespace Vocaluxe.Base
                 }
             }
 
-            List<string> files = new List<string>();
-            files.AddRange(CHelper.ListFiles(CSettings.FolderProfiles, "*.xml", true, true));
+
+            var files = new List<string>();
+            foreach (string path in CSettings.FoldersProfiles)
+                files.AddRange(CHelper.ListFiles(path, "*.xml", true, true));
 
             foreach (string file in files)
             {
                 if (knownFiles.Contains(Path.GetFileName(file)))
                     continue;
 
-                CProfile profile = new CProfile
+                var profile = new CProfile
                     {
-                        FileName = Path.Combine(CSettings.FolderProfiles, file)
+                        FileName = Path.GetFileName(file),
+                        FilePath = Path.GetDirectoryName(file)
                     };
 
                 if (profile.LoadProfile())
@@ -548,10 +574,10 @@ namespace Vocaluxe.Base
 
         private static void _LoadAvatars()
         {
-            List<string> knownFiles = new List<string>();
+            var knownFiles = new List<string>();
             if (_Avatars.Count > 0)
             {
-                int[] ids = new int[_Avatars.Keys.Count];
+                var ids = new int[_Avatars.Keys.Count];
                 _Avatars.Keys.CopyTo(ids, 0);
                 foreach (int id in ids)
                 {
@@ -562,18 +588,21 @@ namespace Vocaluxe.Base
                 }
             }
 
-            List<string> files = new List<string>();
-            files.AddRange(CHelper.ListFiles(CSettings.FolderProfiles, "*.png", true, true));
-            files.AddRange(CHelper.ListFiles(CSettings.FolderProfiles, "*.jpg", true, true));
-            files.AddRange(CHelper.ListFiles(CSettings.FolderProfiles, "*.jpeg", true, true));
-            files.AddRange(CHelper.ListFiles(CSettings.FolderProfiles, "*.bmp", true, true));
+            var files = new List<string>();
+            foreach (string path in CSettings.FoldersProfiles)
+            {
+                files.AddRange(CHelper.ListFiles(path, "*.png", true, true));
+                files.AddRange(CHelper.ListFiles(path, "*.jpg", true, true));
+                files.AddRange(CHelper.ListFiles(path, "*.jpeg", true, true));
+                files.AddRange(CHelper.ListFiles(path, "*.bmp", true, true));
+            }
 
             foreach (string file in files)
             {
                 if (knownFiles.Contains(Path.GetFileName(file)))
                     continue;
 
-                CAvatar avatar = new CAvatar(-1);
+                var avatar = new CAvatar(-1);
                 if (avatar.LoadFromFile(file))
                 {
                     avatar.ID = _AvatarIDs.Dequeue();
@@ -605,7 +634,7 @@ namespace Vocaluxe.Base
                         CConfig.SaveConfig();
                     }
                 }
-                File.Delete(_Profiles[profileID].FileName);
+                File.Delete(Path.Combine(_Profiles[profileID].FilePath, _Profiles[profileID].FileName));
                 _RemoveProfile(profileID);
 
                 //Check if profile is selected in game

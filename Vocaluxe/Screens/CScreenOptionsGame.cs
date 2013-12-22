@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System.Windows.Forms;
@@ -29,7 +27,7 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 1; }
+            get { return 2; }
         }
 
         private const string _SelectSlideLanguage = "SelectSlideLanguage";
@@ -40,12 +38,13 @@ namespace Vocaluxe.Screens
         private const string _SelectSlideTimerMode = "SelectSlideTimerMode";
 
         private const string _ButtonExit = "ButtonExit";
+        private const string _ButtonServer = "ButtonServer";
 
         public override void Init()
         {
             base.Init();
 
-            _ThemeButtons = new string[] {_ButtonExit};
+            _ThemeButtons = new string[] {_ButtonExit, _ButtonServer};
             _ThemeSelectSlides = new string[] {_SelectSlideLanguage, _SelectSlideDebugLevel, _SelectSlideSongMenu, _SelectSlideSongSorting, _SelectSlideTabs, _SelectSlideTimerMode};
         }
 
@@ -88,6 +87,8 @@ namespace Vocaluxe.Screens
                             _SaveConfig();
                             CGraphics.FadeTo(EScreens.ScreenOptions);
                         }
+                        else if (_Buttons[_ButtonServer].Selected)
+                            CGraphics.ShowPopup(EPopupScreens.PopupServerQR);
                         break;
 
                     case Keys.Left:
@@ -114,9 +115,13 @@ namespace Vocaluxe.Screens
 
             if (mouseEvent.LB && _IsMouseOver(mouseEvent))
             {
-                _SaveConfig();
                 if (_Buttons[_ButtonExit].Selected)
+                {
                     CGraphics.FadeTo(EScreens.ScreenOptions);
+                    _SaveConfig();
+                }
+                else if (_Buttons[_ButtonServer].Selected)
+                    CGraphics.ShowPopup(EPopupScreens.PopupServerQR);
             }
             return true;
         }

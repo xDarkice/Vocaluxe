@@ -1,20 +1,18 @@
 ﻿#region license
-// /*
-//     This file is part of Vocaluxe.
+// This file is part of Vocaluxe.
 // 
-//     Vocaluxe is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Vocaluxe is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 // 
-//     Vocaluxe is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+// Vocaluxe is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 // 
-//     You should have received a copy of the GNU General Public License
-//     along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
-//  */
+// You should have received a copy of the GNU General Public License
+// along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
@@ -107,7 +105,6 @@ namespace Vocaluxe.Base
         private const int _SkinSystemVersion = 3;
 
         #region Vars
-        private static readonly XmlWriterSettings _Settings = new XmlWriterSettings();
         private static readonly List<STheme> _Themes = new List<STheme>();
         public static string[] ThemeNames
         {
@@ -115,7 +112,7 @@ namespace Vocaluxe.Base
             {
                 var names = new List<string>();
                 // ReSharper disable LoopCanBeConvertedToQuery
-                foreach (var th in _Themes)
+                foreach (STheme th in _Themes)
                     // ReSharper restore LoopCanBeConvertedToQuery
                 {
                     if (th.PartyModeID == -1)
@@ -132,7 +129,7 @@ namespace Vocaluxe.Base
             {
                 var names = new List<string>();
                 // ReSharper disable LoopCanBeConvertedToQuery
-                foreach (var sk in _Skins)
+                foreach (SSkin sk in _Skins)
                     // ReSharper restore LoopCanBeConvertedToQuery
                 {
                     if (sk.PartyModeID == -1)
@@ -148,10 +145,6 @@ namespace Vocaluxe.Base
         #region Theme and Skin loading and writing
         public static void InitTheme()
         {
-            _Settings.Indent = true;
-            _Settings.Encoding = Encoding.UTF8;
-            _Settings.ConformanceLevel = ConformanceLevel.Document;
-
             _ListThemes();
             ListSkins();
 
@@ -175,7 +168,7 @@ namespace Vocaluxe.Base
                 return false;
 
             // load skins/textures
-            foreach (var valuePair in _Skins[skinIndex].SkinList)
+            foreach (KeyValuePair<string, CSkinElement> valuePair in _Skins[skinIndex].SkinList)
             {
                 CSkinElement sk = valuePair.Value;
                 try
@@ -192,7 +185,7 @@ namespace Vocaluxe.Base
 
 
             // load videos
-            foreach (var valuePair in _Skins[skinIndex].VideoList)
+            foreach (KeyValuePair<string, CVideoSkinElement> valuePair in _Skins[skinIndex].VideoList)
             {
                 try
                 {
@@ -214,10 +207,10 @@ namespace Vocaluxe.Base
         {
             for (int i = 0; i < _Skins.Count; i++)
             {
-                foreach (var sk in _Skins[i].SkinList.Values)
+                foreach (CSkinElement sk in _Skins[i].SkinList.Values)
                     CDraw.RemoveTexture(ref sk.Texture);
 
-                foreach (var vsk in _Skins[i].VideoList.Values)
+                foreach (CVideoSkinElement vsk in _Skins[i].VideoList.Values)
                 {
                     CVideo.Close(vsk.VideoIndex);
                     CDraw.RemoveTexture(ref vsk.Texture);
@@ -291,7 +284,7 @@ namespace Vocaluxe.Base
         private static void _SaveTheme(int themeIndex)
         {
             #region ThemeMainFile
-            using (XmlWriter writer = XmlWriter.Create(Path.Combine(_Themes[themeIndex].Path, _Themes[themeIndex].FileName), _Settings))
+            using (XmlWriter writer = XmlWriter.Create(Path.Combine(_Themes[themeIndex].Path, _Themes[themeIndex].FileName), CConfig.XMLSettings))
             {
                 writer.WriteStartDocument();
                 writer.WriteStartElement("root");
@@ -333,7 +326,7 @@ namespace Vocaluxe.Base
         {
             for (int skinIndex = 0; skinIndex < _Skins.Count; skinIndex++)
             {
-                using (XmlWriter writer = XmlWriter.Create(Path.Combine(_Skins[skinIndex].Path, _Skins[skinIndex].FileName), _Settings))
+                using (XmlWriter writer = XmlWriter.Create(Path.Combine(_Skins[skinIndex].Path, _Skins[skinIndex].FileName), CConfig.XMLSettings))
                 {
                     writer.WriteStartDocument();
                     writer.WriteStartElement("root");
@@ -358,7 +351,7 @@ namespace Vocaluxe.Base
                     #region Skins
                     writer.WriteStartElement("Skins");
 
-                    foreach (var element in _Skins[skinIndex].SkinList)
+                    foreach (KeyValuePair<string, CSkinElement> element in _Skins[skinIndex].SkinList)
                         writer.WriteElementString(element.Key, element.Value.Value);
                     writer.WriteEndElement();
                     #endregion Skins
@@ -366,7 +359,7 @@ namespace Vocaluxe.Base
                     #region Videos
                     writer.WriteStartElement("Videos");
 
-                    foreach (var element in _Skins[skinIndex].VideoList)
+                    foreach (KeyValuePair<string, CVideoSkinElement> element in _Skins[skinIndex].VideoList)
                         writer.WriteElementString(element.Key, element.Value.Value);
                     writer.WriteEndElement();
                     #endregion Videos
@@ -730,7 +723,7 @@ namespace Vocaluxe.Base
             }
 
             writer.WriteStartElement("ColorSchemes");
-            foreach (var scheme in _Skins[skinIndex].ThemeColors.ColorSchemes)
+            foreach (SColorScheme scheme in _Skins[skinIndex].ThemeColors.ColorSchemes)
             {
                 writer.WriteStartElement(scheme.Name);
 
@@ -780,7 +773,7 @@ namespace Vocaluxe.Base
 
         public static bool GetColor(string colorName, int skinIndex, out SColorF color)
         {
-            foreach (var scheme in _Skins[skinIndex].ThemeColors.ColorSchemes)
+            foreach (SColorScheme scheme in _Skins[skinIndex].ThemeColors.ColorSchemes)
             {
                 if (scheme.Name == colorName)
                 {
