@@ -58,6 +58,8 @@ namespace VocaluxeLib.Menu.SongMenu
 
         private bool _SmallView;
 
+        private float _Length = -1f;
+
         public CSongMenuTileBoard(int partyModeID)
             : base(partyModeID) {}
 
@@ -65,8 +67,13 @@ namespace VocaluxeLib.Menu.SongMenu
         {
             set
             {
-                base._PreviewId = value;
+                base._PlaySong(value);
+                base._PreviewIdInternal = value;
                 _UpdatePreview();
+            }
+            get
+            {
+                return base._PreviewIdInternal;
             }
         }
 
@@ -132,6 +139,9 @@ namespace VocaluxeLib.Menu.SongMenu
                 for (int i = 0; i < _Tiles.Count; i++)
                     _Tiles[i].Selected = _Locked == i + _Offset;
             }
+
+            if (_Length < 0 && CBase.Sound.GetLength(_PreviewSongStream) > 0 && CBase.Songs.IsInCategory())
+                UpdateLength(CBase.Songs.GetVisibleSong(_PreviewId));
         }
 
         private void _UpdatePreview()
@@ -145,6 +155,7 @@ namespace VocaluxeLib.Menu.SongMenu
             _VideoIcon.Visible = false;
             _MedleyCalcIcon.Visible = false;
             _MedleyTagIcon.Visible = false;
+            _Length = -1f;
 
             //Check if nothing is selected (for preview)
             if (_PreviewId < 0)
@@ -173,14 +184,7 @@ namespace VocaluxeLib.Menu.SongMenu
                 _MedleyCalcIcon.Visible = song.Medley.Source == EDataSource.Calculated;
                 _MedleyTagIcon.Visible = song.Medley.Source == EDataSource.Tag;
 
-                float time = CBase.Sound.GetLength(_PreviewSongStream);
-                if (Math.Abs(song.Finish) > 0.001)
-                    time = song.Finish;
-
-                time -= song.Start;
-                var min = (int)Math.Floor(time / 60f);
-                var sec = (int)(time - min * 60f);
-                _SongLength.Text = min.ToString("00") + ":" + sec.ToString("00");
+                UpdateLength(song);
             }
             else
             {
@@ -197,13 +201,32 @@ namespace VocaluxeLib.Menu.SongMenu
             }
         }
 
+        private void UpdateLength(CSong song)
+        {
+            if (song != null)
+            {
+                float time = CBase.Sound.GetLength(_PreviewSongStream);
+                if (Math.Abs(song.Finish) > 0.001)
+                    time = song.Finish;
+
+                // The audiobackend is not yet ready to return the length
+                if (time > 0)
+                {
+                    time -= song.Start;
+                    var min = (int)Math.Floor(time / 60f);
+                    var sec = (int)(time - min * 60f);
+                    _SongLength.Text = min.ToString("00") + ":" + sec.ToString("00");
+                    _Length = time;
+                }
+            }
+        }
+
         public override void OnShow()
         {
             if (CBase.Songs.GetTabs() == EOffOn.TR_CONFIG_OFF && CBase.Songs.GetNumCategories() > 0 && !CBase.Songs.IsInCategory())
                 _EnterCategory(0);
             _ActualSelection = -1;
             _Locked = -1;
-            _PreviewId = -1;
             _UpdateList(0, true);
             //AfterCategoryChange();
             SetSelectedSong(_PreviewId);
@@ -352,9 +375,10 @@ namespace VocaluxeLib.Menu.SongMenu
                 }
 
                 if (!keyEvent.Handled)
-                {
-                    _PreviewId = _Locked;
+                {                   
                     _ActualSelection = _Locked;
+                    if (_PreviewId != _Locked)
+                        _PreviewId = _Locked;
 
                     for (int i = 0; i < _Tiles.Count; i++)
                         _Tiles[i].Selected = _Locked == i + _Offset;
@@ -535,6 +559,7 @@ namespace VocaluxeLib.Menu.SongMenu
 
         public override void SetSelectedSong(int visibleSongNr)
         {
+            base._PlaySong(visibleSongNr);
             base.SetSelectedSong(visibleSongNr);
 
             if (visibleSongNr >= 0 && visibleSongNr < CBase.Songs.GetNumSongsVisible())

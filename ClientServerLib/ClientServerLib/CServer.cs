@@ -205,13 +205,15 @@ namespace ServerLib
 
         public static string GetLocalAddress()
         {
-            IPAddress[] ips = Dns.GetHostAddresses(Dns.GetHostName());
+            return Dns.GetHostName();
+            
+            /*IPAddress[] ips = Dns.GetHostAddresses(Dns.GetHostName());
             foreach (IPAddress ip in ips)
             {
                 if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                     return ip.ToString();
             }
-            return "";
+            return "";*/
         }
 
         #region server control
@@ -298,7 +300,7 @@ namespace ServerLib
             ProcessStartInfo info = new ProcessStartInfo
             {
                 FileName = "VocaluxeServerConfig.exe",
-                Arguments = port.ToString() + " " + _Encrypted.ToString(),
+                Arguments = port.ToString() + " " + (_Encrypted?"true":"false"),
                 UseShellExecute = true,
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden,

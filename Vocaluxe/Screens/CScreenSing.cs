@@ -94,6 +94,7 @@ namespace Vocaluxe.Screens
 
         private int _CurrentBeat;
         private int _CurrentStream = -1;
+        private float _Length = -1f;
         //private int _NextStream = -1;
         private const float _Volume = 100f;
         private int _CurrentVideo = -1;
@@ -417,6 +418,7 @@ namespace Vocaluxe.Screens
             _CurrentBeat = -100;
             _CurrentTime = 0f;
             _FinishTime = 0f;
+            _Length = -1f;
             _TimeToFirstNote = 0f;
             _TimeToFirstNoteDuet = 0f;
             _Pause = false;
@@ -539,6 +541,8 @@ namespace Vocaluxe.Screens
         {
             base.OnClose();
             CBackgroundMusic.Disabled = false;
+            if (_Webcam)
+                CWebcam.Stop();
             _CloseSong();
         }
 
@@ -610,6 +614,7 @@ namespace Vocaluxe.Screens
             _FinishTime = song.Finish;
             _TimeToFirstNote = 0f;
             _TimeToFirstNoteDuet = 0f;
+            _Length = -1f;
             var voiceAssignments = new int[CGame.NumPlayer];
             if (song.IsDuet)
             {
@@ -882,7 +887,8 @@ namespace Vocaluxe.Screens
                 _Buttons[_ButtonContinue].Visible = false;
                 _Buttons[_ButtonSkip].Visible = false;
                 CSound.Play(_CurrentStream);
-                CWebcam.Start();
+                if(_Webcam)
+                    CWebcam.Start();
             }
         }
 
@@ -1302,6 +1308,9 @@ namespace Vocaluxe.Screens
             totalTime -= song.Start;
             float currentTime = _CurrentTime - song.Start;
 
+            if (_Length < 0 && totalTime > 0)
+                 _PrepareTimeLine();
+
             if (totalTime <= 0f)
                 return;
 
@@ -1381,6 +1390,8 @@ namespace Vocaluxe.Screens
 
                     if (totalTime <= 0f)
                         return;
+
+                    _Length = totalTime;
 
                     foreach (CVoice voice in song.Notes.Voices)
                     {
