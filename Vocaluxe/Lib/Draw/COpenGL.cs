@@ -354,7 +354,7 @@ namespace Vocaluxe.Lib.Draw
 
         private void _OnMouseEnter(object sender, EventArgs e)
         {
-            Cursor.Hide();
+            Cursor.Hide(); //TODO: this doesn't work on linux
             _Mouse.Visible = true;
         }
         #endregion
