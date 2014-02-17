@@ -122,8 +122,8 @@ namespace Vocaluxe.Lib.Draw
             bool ok = false;
             try
             {
-                var gm = new GraphicsMode(32, 24, 0, (int)CConfig.AAMode);
-                _Control = new GLControl(gm, 2, 1, GraphicsContextFlags.Default);
+				var gm = new GraphicsMode(24, 24, 0, (int)CConfig.AAMode);
+				_Control = new GLControl(gm, 2, 1, GraphicsContextFlags.Default);
                 if (_Control.GraphicsMode != null)
                     ok = true;
             }

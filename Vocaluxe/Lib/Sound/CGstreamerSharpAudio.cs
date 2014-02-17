@@ -11,25 +11,30 @@ namespace Vocaluxe.Lib.Sound
 {
     public class CGstreamerSharpAudio : IPlayback
     {
+
         private readonly Dictionary<int, CGstreamerSharpAudioStream> _Streams = new Dictionary<int, CGstreamerSharpAudioStream>();
         private static int _IDCount;
-
+#if WIN
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         private static extern void SetDllDirectory(string lpPathName);
-
+#endif
         public bool Init()
         {
+
 #if ARCH_X86
             string path = ".\\x86\\gstreamer";
 #endif
 #if ARCH_X64
             string path = ".\\x64\\gstreamer";
 #endif
+#if WIN
             SetDllDirectory(path);
+#endif
             Application.Init();
+
             Registry reg = Registry.Get();
             reg.ScanPath(path);
-            
+           
             return Application.IsInitialized;
         }
 

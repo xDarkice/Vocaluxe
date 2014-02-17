@@ -209,7 +209,7 @@
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.XML" />
-    <Reference Include="Mono.Data.Sqlite" Condition=" !$(DefineConstants.Contains('WIN'))"/>
+    <Reference Include="Mono.Data.Sqlite" Condition=" !('$(Configuration)' == 'DebugWin' Or '$(Configuration)' == 'ReleaseWin' Or '$(Configuration)' == 'InstallerWin')"/>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Base\CBackgroundMusic.cs" />
@@ -259,7 +259,7 @@
     <Compile Include="GameModes\IGameMode.cs" />
     <Compile Include="SongQueue\ISongQueue.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="Lib\Draw\CDirect3D.cs" Condition=" $(DefineConstants.Contains('WIN'))">
+    <Compile Include="Lib\Draw\CDirect3D.cs" Condition=" ('$(Configuration)' == 'DebugWin' Or '$(Configuration)' == 'ReleaseWin' Or '$(Configuration)' == 'InstallerWin')">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Lib\Draw\CDrawWinForm.cs">
@@ -274,7 +274,7 @@
     <Compile Include="Lib\Input\WiiMote\CWiiMote.cs" />
     <Compile Include="Lib\Input\WiiMote\WiiMoteLib.cs" />
     <Compile Include="Lib\Playlist\CPlaylistFile.cs" />
-    <Compile Include="Lib\Sound\CDirectSoundRecord.cs" Condition=" $(DefineConstants.Contains('WIN'))" />
+    <Compile Include="Lib\Sound\CDirectSoundRecord.cs" Condition=" ('$(Configuration)' == 'DebugWin' Or '$(Configuration)' == 'ReleaseWin' Or '$(Configuration)' == 'InstallerWin')" />
     <Compile Include="Lib\Sound\CGstreamerAudio.cs" />
     <Compile Include="Lib\Sound\COpenALPlay.cs" />
     <Compile Include="Base\CSound.cs" />
@@ -318,7 +318,7 @@
     <None Include="app.config">
       <SubType>Designer</SubType>
     </None>
-    <Compile Include="Lib\Sound\PortAudio\PortAudio.cs" />
+    <Compile Include="Lib\Sound\Portaudio\PortAudio.cs" />
     <None Include="Doc\SQLite.NET.chm" />
     <Content Include="Website\locales\de.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -476,7 +476,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /E /D /Y "$(ProjectDir)\Website" "$(SolutionDir)\PhoneGap"</PostBuildEvent>
+    <PostBuildEvent Condition=" '$(OS)' == 'Windows_NT' ">xcopy /E /D /Y "$(ProjectDir)\Website" "$(SolutionDir)\PhoneGap"</PostBuildEvent>
+    <PostBuildEvent Condition=" '$(OS)' != 'Windows_NT' ">cp -ruT "$(ProjectDir)Website" "$(SolutionDir)/PhoneGap"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

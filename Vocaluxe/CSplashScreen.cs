@@ -65,7 +65,7 @@ namespace Vocaluxe
 
             FormBorderStyle = FormBorderStyle.None;
             Text = CSettings.ProgramName;
-            CenterToScreen();
+            CenterToScreen(); //TODO: problems with multi monitor setup on linux
             Show();
         }
 
